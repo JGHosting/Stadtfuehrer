@@ -17,7 +17,7 @@ manifest = {"voices": {}}
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 GEMINI_MODELS = ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"]
 GEMINI_VOICE = "Aoede"
-GEMINI_BUDGET_S = 25 * 60          # höchstens 25 Minuten pro Lauf
+GEMINI_BUDGET_S = int(os.environ.get("GEMINI_BUDGET_S", "120"))   # bei Updates kurz, nachts lang
 
 STYLE_STORY = ("Lies den folgenden Text auf Deutsch vor wie eine begeisterte, warmherzige Stadtführerin in Augsburg: "
                "lebendig und natürlich, mit kleinen Pausen vor Pointen und Funfacts, ein Lächeln in der Stimme, "
