@@ -1,0 +1,11 @@
+:root{--bg:#EDF0EC;--surface:#fff;--ink:#1B211E;--muted:#5B6660;--line:#D5DBD4;--red:#A6322A;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#121715;--surface:#1A201D;--ink:#E6ECE8;--muted:#9AA69F;--line:#2F3833;--red:#E26A5E;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Familjen Grotesk",system-ui,-apple-system,sans-serif;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 32px)}
+main{max-width:680px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+h1{font-family:"Literata",Georgia,serif;font-size:28px;line-height:1.2;margin:4px 0 16px}
+h2{font-family:"Literata",Georgia,serif;font-size:19px;margin:26px 0 6px}
+p,li{max-width:65ch}
+a{color:var(--red)}
+.back{display:inline-block;margin:0 auto 12px;max-width:680px;width:100%;font-weight:600;text-decoration:none}
+.muted{color:var(--muted);font-size:14px}

@@ -12,11 +12,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&display=swap" rel="stylesheet">
-<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="vendor/fonts/fonts.css" rel="stylesheet">
+<link href="vendor/maplibre/maplibre-gl.css" rel="stylesheet">
+<script src="vendor/maplibre/maplibre-gl.js"></script>
 <style>
 /* Layout: Vollbild-Karte, darüber ein einziges Bottom-Sheet als Steuerzentrale; Geschichten als eigenes Lese-Blatt.
    Farben: Augsburger Stadtrot + Zirbelnuss-Grün auf kühlem Kalkstein-Grau. */
@@ -148,6 +146,14 @@ details[open].settings summary::after{content:" ▴"}
 .citylist b{font-size:16px}
 .citylist span{font-size:13px;color:var(--muted)}
 .citylist .more{padding:10px 14px;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+.legal-links{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;padding-top:4px}
+.legal-links a{color:var(--muted)}
+.welcome{position:fixed;inset:0;z-index:40;background:rgba(10,16,13,.55);display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(16px + var(--safe-b))}
+.welcome-card{background:var(--surface);border-radius:22px;max-width:520px;width:100%;padding:22px 20px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.welcome-card h2{font-size:24px}
+.welcome-card p{margin:0;font-size:15px;color:var(--muted)}
+.welcome-card ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+.welcome-card .hint a{color:var(--ink)}
 .banner .ic{width:44px;height:44px;display:grid;place-items:center}
 .banner .ic svg{width:40px;height:40px;transition:transform .3s}
 .ban-main{font-weight:700;font-size:18px;line-height:1.2}
@@ -167,6 +173,7 @@ details[open].settings summary::after{content:" ▴"}
 .story{position:fixed;inset:0;z-index:20;background:var(--surface);overflow-y:auto;overscroll-behavior:contain;padding-top:var(--safe-t)}
 .story-inner{max-width:620px;margin:0 auto;padding:0 20px calc(110px + var(--safe-b))}
 .story-img{width:calc(100% + 40px);margin:0 -20px;aspect-ratio:16/10;object-fit:cover;display:block;background:var(--surface-2);max-width:none}
+.story-cap a{color:inherit}
 .story-cap{font-size:11px;color:var(--muted);padding:4px 0 0;text-align:right}
 .story-head{padding-top:18px;display:flex;flex-direction:column;gap:8px}
 .story-head .eyebrow{color:var(--red)}
@@ -226,6 +233,19 @@ details[open].settings summary::after{content:" ▴"}
   <button id="toastClose" type="button">Ausblenden</button>
 </div>
 <div id="notice" class="notice" hidden role="status"></div>
+<div id="welcome" class="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+  <div class="welcome-card">
+    <h2 id="welcomeTitle">Willkommen!</h2>
+    <p>Diese App stellt dir eine persönliche Stadtführung zusammen und erzählt dir unterwegs Geschichten. Kurz vorab, wie sie funktioniert:</p>
+    <ul>
+      <li><b>Standort:</b> Damit die App dich führen und an der richtigen Stelle erzählen kann, braucht sie während der Tour deinen Standort. Er bleibt auf deinem Gerät.</li>
+      <li><b>Route und Karte:</b> Zur Routenberechnung werden Start und Stationen an einen Routing-Dienst geschickt, Karten und Fotos werden von OpenFreeMap und Wikipedia geladen.</li>
+      <li><b>Keine Anmeldung, kein Tracking, keine Werbung.</b></li>
+    </ul>
+    <p class="hint">Mehr dazu in der <a href="legal/datenschutz.html">Datenschutzerklärung</a>. Achte unterwegs bitte immer auf den Verkehr.</p>
+    <button class="btn btn-primary" id="welcomeOk" type="button">Verstanden, los geht’s</button>
+  </div>
+</div>
 
 <div id="player" class="rail" hidden aria-label="Audio-Wiedergabe">
   <button class="rbtn primary" id="playerPause" type="button" aria-label="Pause"></button>
@@ -303,6 +323,7 @@ details[open].settings summary::after{content:" ▴"}
         <button class="btn btn-secondary" id="testVoice" type="button">Stimme testen</button>
       </div>
     </details>
+    <nav class="legal-links" aria-label="Rechtliches"><a href="legal/impressum.html">Impressum</a><a href="legal/datenschutz.html">Datenschutz</a><a href="legal/lizenzen.html">Quellen &amp; Lizenzen</a></nav>
   </div>
 
   <!-- PREVIEW -->
@@ -374,7 +395,7 @@ details[open].settings summary::after{content:" ▴"}
   <div class="story-grip" aria-hidden="true"><i></i></div>
   <div class="story-inner">
     <img id="storyImg" class="story-img" alt="" hidden>
-    <div class="story-cap" id="storyCap" hidden>Bild: Wikimedia Commons über Wikipedia</div>
+    <div class="story-cap" id="storyCap" hidden></div>
     <div class="story-head">
       <span class="eyebrow" id="storyEyebrow"></span>
       <h2 id="storyTitle"></h2>
@@ -452,25 +473,44 @@ function applyWiki(data){
     const w=data[p.id]; if(!w) continue;
     if(w.ll && dist(w.ll,p.ll)<500) p.ll=w.ll;
     if(w.img) p.img=w.img;
+    if(w.credit) p.credit=w.credit;
   }
 }
 async function enrichFromWikipedia(){
-  const cached=store.get('wiki_'+CITY.id,null);
+  const cached=store.get('wiki2_'+CITY.id,null);
   if(cached && Date.now()-cached.t < 14*864e5){ applyWiki(cached.d); return; }
   const list=allPlaces().filter(p=>p.wiki), out={};
   for(let i=0;i<list.length;i+=45){
     const chunk=list.slice(i,i+45);
-    const url='https://de.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=coordinates|pageimages&piprop=thumbnail&pithumbsize=800&titles='+encodeURIComponent(chunk.map(p=>p.wiki).join('|'));
+    const url='https://de.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=coordinates|pageimages&piprop=thumbnail|name&pithumbsize=800&titles='+encodeURIComponent(chunk.map(p=>p.wiki).join('|'));
     const j=await (await fetch(url)).json();
     const map={}; chunk.forEach(p=>map[p.wiki]=p.id);
     const alias=t=>{ for(const n of (j.query.normalized||[])) if(n.to===t) t=n.from; return t; };
     const back=t=>{ for(const r of (j.query.redirects||[])) if(r.to===t) return alias(r.from); return alias(t); };
     for(const pg of Object.values(j.query.pages||{})){
       const id=map[back(pg.title)]; if(!id) continue;
-      out[id]={ ll: pg.coordinates? [pg.coordinates[0].lat, pg.coordinates[0].lon] : null, img: pg.thumbnail? pg.thumbnail.source : null };
+      out[id]={ ll: pg.coordinates? [pg.coordinates[0].lat, pg.coordinates[0].lon] : null, img: pg.thumbnail? pg.thumbnail.source : null, file: pg.pageimage||null };
     }
   }
-  applyWiki(out); store.set('wiki_'+CITY.id,{t:Date.now(), d:out});
+  /* Bildnachweise (Urheber + Lizenz) von Wikimedia Commons holen – Pflicht laut Lizenz */
+  const files=[...new Set(Object.values(out).map(o=>o.file).filter(Boolean))];
+  const strip=h=>{ const d=document.createElement('div'); d.innerHTML=h||''; return (d.textContent||'').replace(/\s+/g,' ').trim(); };
+  const credits={};
+  for(let i=0;i<files.length;i+=45){
+    const chunk=files.slice(i,i+45);
+    const url='https://de.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata|url&iiextmetadatafilter=Artist|LicenseShortName|LicenseUrl&titles='+encodeURIComponent(chunk.map(f=>'Datei:'+f).join('|'));
+    try{
+      const j=await (await fetch(url)).json();
+      const norm={}; for(const n of (j.query.normalized||[])) norm[n.to]=n.from;
+      for(const pg of Object.values(j.query.pages||{})){
+        const ii=pg.imageinfo&&pg.imageinfo[0]; if(!ii) continue; const md=ii.extmetadata||{};
+        const orig=(norm[pg.title]||pg.title).replace(/^(Datei|File):/,'');
+        credits[orig.replace(/ /g,'_')]={ artist: strip(md.Artist&&md.Artist.value).slice(0,120)||'unbekannt', license: (md.LicenseShortName&&md.LicenseShortName.value)||'', url: ii.descriptionurl||'' };
+      }
+    }catch(e){}
+  }
+  for(const o of Object.values(out)){ if(o.file) o.credit=credits[o.file.replace(/ /g,'_')]||null; if(o.img&&!o.credit) o.img=null; }   // ohne Nachweis kein Bild
+  applyWiki(out); store.set('wiki2_'+CITY.id,{t:Date.now(), d:out});
 }
 let wikiReady = Promise.resolve();
 
@@ -1212,7 +1252,7 @@ function simTick(){
    ===================================================================== */
 function openStory(s,{mode}){
   state.storyCtx={s,mode};
-  const img=$('#storyImg'); if(s.img){ img.src=s.img; img.alt=s.name; img.hidden=false; $('#storyCap').hidden=false; } else { img.hidden=true; $('#storyCap').hidden=true; }
+  const img=$('#storyImg'); if(s.img){ img.src=s.img; img.alt=s.name; img.hidden=false; const c=s.credit||{}; $('#storyCap').innerHTML=`Foto: ${esc(c.artist||'unbekannt')}${c.license?' · '+esc(c.license):''}${c.url?` · <a href="${esc(c.url)}" target="_blank" rel="noopener">Quelle</a>`:''} (Wikimedia Commons)`; $('#storyCap').hidden=false; } else { img.hidden=true; $('#storyCap').hidden=true; }
   const labels=(s.themes||[]).map(t=>(CITY.themes.find(x=>x.id===t)||{}).label).filter(Boolean);
   $('#storyEyebrow').textContent=mode==='arrival'? 'Du bist da' : mode==='wayside'? 'Am Wegesrand' : labels.join(' · ');
   $('#storyTitle').textContent=s.name;
@@ -1371,9 +1411,14 @@ document.addEventListener('gesturechange',e=>{ if(!e.target.closest||!e.target.c
 
 /* Start */
 initPlanUI(); updateStartLabel(); applyDev();
+const consentReady=new Promise(res=>{
+  if(store.get('consent_v1',false)) return res();
+  $('#welcome').hidden=false;
+  $('#welcomeOk').onclick=()=>{ store.set('consent_v1',true); $('#welcome').hidden=true; res(); };
+});
 selectCity(state.settings.cityId).then(()=>{
   showView('viewPlan');
-  mapReady.then(()=>{ if(state.settings.startKind==='me') locateOnce(true); });
+  Promise.all([mapReady,consentReady]).then(()=>{ if(state.settings.startKind==='me') locateOnce(true); });
 });
 window.addEventListener('resize',positionLocate);
 if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
