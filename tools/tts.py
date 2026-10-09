@@ -18,6 +18,9 @@ GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 GEMINI_MODELS = ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"]
 GEMINI_VOICE = "Aoede"
 GEMINI_BUDGET_S = int(os.environ.get("GEMINI_BUDGET_S", "120"))   # bei Updates kurz, nachts lang
+# Harte Kostenbremse: höchstens so viele Gemini-Anfragen pro Lauf. Bei ~1 Minute Audio pro Geschichte
+# kostet eine Anfrage grob 0,02–0,03 € – 150 Anfragen bleiben also deutlich unter 5 €.
+GEMINI_MAX_REQUESTS = int(os.environ.get("GEMINI_MAX_REQUESTS", "150"))
 
 STYLE_STORY = ("Lies den folgenden Text auf Deutsch vor wie eine begeisterte, warmherzige Stadtführerin in {city}: "
                "lebendig und natürlich, mit kleinen Pausen vor Pointen und Funfacts, ein Lächeln in der Stimme, "
@@ -67,12 +70,14 @@ def run_gemini(TEXTS, manifest, city_name, state, city):
     print(f"gemini: {len(todo)} offen, {len(m)} aus Cache", flush=True)
     models, done = state["models"], 0
     for key, text, fname, path in todo:
-        if time.time() - state["t0"] > GEMINI_BUDGET_S: print("gemini: Zeitbudget erreicht, Rest beim nächsten Lauf"); break
+        if time.time() - state["t0"] > GEMINI_BUDGET_S: note(state, "Zeitbudget erreicht, Rest beim nächsten Lauf"); break
+        if state.get("requests", 0) >= GEMINI_MAX_REQUESTS: note(state, f"Kostenbremse: {GEMINI_MAX_REQUESTS} Anfragen in diesem Lauf erreicht"); break
         prompt = (style_story if len(text) > 120 else STYLE_SHORT) + text
         ok = False
         for attempt in range(6):
             if not models: break
             try:
+                state["requests"] = state.get("requests", 0) + 1
                 pcm, rate = gemini_request(models[0], prompt)
                 pcm_to_mp3(pcm, rate, path); m[key] = fname; ok = True; done += 1
                 print(f"  ✓ {key} ({models[0]})", flush=True); break
@@ -148,6 +153,6 @@ for f in os.listdir(OUT):
     if f.endswith(".mp3") and f not in keep: os.remove(os.path.join(OUT, f))
 # Status für die App (Entwicklerbereich): Wie weit ist Gemini, was ist zuletzt passiert?
 json.dump({"zeit": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()), "gemini_aktiv": bool(GEMINI_KEY),
-           "modelle_verfuegbar": gstate["models"], "tageskontingent_erreicht": gstate.get("quota", False),
+           "modelle_verfuegbar": gstate["models"], "tageskontingent_erreicht": gstate.get("quota", False), "anfragen_in_diesem_lauf": gstate.get("requests", 0),
            "staedte": gstate.get("cities", {}), "protokoll": gstate["log"]},
           open(os.path.join(OUT, "status.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
