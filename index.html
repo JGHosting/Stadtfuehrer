@@ -126,6 +126,7 @@ details[open].settings summary::after{content:" ▴"}
 
 /* Banner */
 .banner{position:fixed;z-index:12;left:10px;right:10px;top:calc(var(--safe-t) + 10px);max-width:540px;margin:0 auto;background:var(--pine);color:var(--pine-ink);border-radius:18px;padding:12px 14px;display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.banner.push{background:var(--gold);color:var(--surface)}
 .banner .ic{width:44px;height:44px;display:grid;place-items:center}
 .banner .ic svg{width:40px;height:40px;transition:transform .3s}
 .ban-main{font-weight:700;font-size:18px;line-height:1.2}
@@ -162,18 +163,12 @@ details[open].settings summary::after{content:" ▴"}
 .story-grip{position:sticky;top:0;z-index:3;height:0;display:flex;justify-content:center}
 .story-grip i{display:block;width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(0,0,0,.35);margin-top:8px}
 .story-min{position:fixed;z-index:21;top:calc(var(--safe-t) + 12px);left:12px;height:40px;border-radius:20px;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-weight:600;padding:0 14px;display:flex;align-items:center;gap:6px}
-.player{position:fixed;z-index:11;left:12px;right:12px;max-width:540px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 26px rgba(0,0,0,.2);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
-.player-top{display:flex;align-items:center;gap:8px;min-width:0;border:0;background:none;padding:0;text-align:left}
-.player-top .eq{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none}
-.player.paused .player-top .eq{background:var(--muted)}
-.player-top b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.player-top span{font-size:12px;color:var(--muted);white-space:nowrap}
-.player-row{display:flex;gap:8px;align-items:center}
-.pbtn{width:44px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;flex:none}
-.pbtn svg{width:20px;height:20px}
-.pbtn.wide{width:auto;padding:0 12px;font-weight:700;font-size:14px;gap:6px;display:flex;align-items:center}
-.player .seg{flex:1;min-width:0}
-.player .seg button{padding:7px 0;font-size:13px;font-variant-numeric:tabular-nums}
+.rail{position:fixed;z-index:11;right:12px;display:flex;flex-direction:column;gap:10px}
+.rbtn{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;box-shadow:0 3px 12px rgba(0,0,0,.18);padding:0}
+.rbtn svg{width:22px;height:22px}
+.rbtn.primary{background:var(--red);border-color:var(--red);color:var(--red-ink)}
+.rbtn.speed{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.rbtn:active{transform:scale(.94)}
 .story-close{position:fixed;z-index:21;top:calc(var(--safe-t) + 12px);right:12px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;display:grid;place-items:center}
 .story-bar{position:fixed;z-index:21;left:0;right:0;bottom:0;padding:12px 16px calc(12px + var(--safe-b));background:var(--surface);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:center}
 .story-bar .btn{flex:1;max-width:300px}
@@ -186,7 +181,7 @@ details[open].settings summary::after{content:" ▴"}
 .mk-small{width:12px;height:12px;border-radius:50%;background:var(--gold);border:2px solid var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .mk-start{width:22px;height:22px;border-radius:6px;background:var(--ink);border:2.5px solid var(--surface);box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .me{width:20px;height:20px;border-radius:50%;background:#2B7DE9;border:3px solid #fff;box-shadow:0 0 0 6px rgba(43,125,233,.22)}
-.locate{position:fixed;z-index:9;right:12px;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.locate{position:fixed;z-index:9;right:12px;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .locate svg{width:22px;height:22px}
 .spinner{width:18px;height:18px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -210,15 +205,10 @@ details[open].settings summary::after{content:" ▴"}
 </div>
 <div id="notice" class="notice" hidden role="status"></div>
 
-<div id="player" class="player" hidden aria-label="Audio-Wiedergabe">
-  <button class="player-top" id="playerOpen" type="button"><i class="eq"></i><b id="playerTitle">–</b><span id="playerState">läuft</span></button>
-  <div class="player-row">
-    <button class="pbtn" id="playerPause" type="button" aria-label="Pause"></button>
-    <div class="seg" id="playerSpeed">
-      <button type="button" data-v="1">1×</button><button type="button" data-v="1.25">1,25×</button><button type="button" data-v="1.5">1,5×</button><button type="button" data-v="2">2×</button>
-    </div>
-    <button class="pbtn wide" id="playerSkip" type="button">Weiter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l8 7-8 7zM16 5v14"/></svg></button>
-  </div>
+<div id="player" class="rail" hidden aria-label="Audio-Wiedergabe">
+  <button class="rbtn primary" id="playerPause" type="button" aria-label="Pause"></button>
+  <button class="rbtn speed" id="playerSpeed" type="button" aria-label="Geschwindigkeit ändern">1×</button>
+  <button class="rbtn" id="playerSkip" type="button" aria-label="Überspringen"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5l9 7-9 7z"/><rect x="16" y="5" width="3" height="14" rx="1"/></svg></button>
 </div>
 
 <button id="locateBtn" class="locate" type="button" aria-label="Meinen Standort zeigen">
@@ -418,6 +408,11 @@ const state = {
 const saveSettings = () => store.set('settings', state.settings);
 const SPEED = {walk:75, bike:220};   // Meter pro Minute (4,5 km/h bzw. ~13 km/h)
 const DETOUR = 1.3;                  // Luftlinie -> Wegstrecke
+const isPush = st => st && st.mode==='pushing bike';
+const pushMeters = legs => legs.reduce((a,l)=>a+l.steps.reduce((b,st)=>b+(isPush(st)?st.distance:0),0),0);
+/* Fahrzeit: beim Rad zählen Schiebestrecken (Fußgängerzonen) mit Gehtempo */
+const travelMin = (legs,mode) => { const all=legs.reduce((a,l)=>a+l.distance,0); if(mode!=='bike') return all/SPEED.walk;
+  const push=pushMeters(legs); return (all-push)/SPEED.bike + push/SPEED.walk; };
 const dwellOf = (s,mode) => mode==='bike' ? Math.max(4, Math.round(s.dwell*0.8)) : s.dwell;
 
 /* =====================================================================
@@ -535,11 +530,11 @@ function mergeLegs(raw,specs){
         if(si===0 && pi>0){                                                // Abfahrt am Zwischenpunkt = Weiterlaufen
           const arr=parts[pi-1].steps[parts[pi-1].steps.length-1];
           const mod=turnMod(arr.maneuver.bearing_before, st.maneuver.bearing_after);
-          if(mod==='straight' && steps.length){
+          if(mod==='straight' && steps.length && steps[steps.length-1].mode===st.mode){
             const prev=steps[steps.length-1];
             steps[steps.length-1]={...prev, distance:prev.distance+st.distance,
               geometry:{coordinates:[...prev.geometry.coordinates,...st.geometry.coordinates.slice(1)]}};
-          } else steps.push({...st, maneuver:{...st.maneuver, type:'turn', modifier:mod}});
+          } else steps.push({...st, maneuver:{...st.maneuver, type:mod==='straight'?'continue':'turn', modifier:mod}});
           return;
         }
         steps.push(st);
@@ -687,6 +682,7 @@ try{
       map.addLayer({id:'route-done',type:'line',source:'route',filter:['==',['get','st'],'done'],layout:lay,paint:{'line-color':'#8A9A92','line-width':5}});
       map.addLayer({id:'route-todo',type:'line',source:'route',filter:['==',['get','st'],'todo'],layout:{'line-join':'round'},paint:{'line-color':'#C9675D','line-width':5,'line-dasharray':[1.4,1.2]}});
       map.addLayer({id:'route-current',type:'line',source:'route',filter:['==',['get','st'],'current'],layout:lay,paint:{'line-color':'#A6322A','line-width':6}});
+      map.addLayer({id:'route-push',type:'line',source:'route',filter:['==',['get','st'],'push'],layout:{'line-join':'round'},paint:{'line-color':'#E3B23C','line-width':6,'line-dasharray':[1,1]}});
     }catch(err){ console.error(err); }
     mapReadyResolve();
   });
@@ -717,6 +713,8 @@ async function drawRoute(){
   const li=state.nav? state.nav.legIdx : -1;
   const feats=(state.legs||[]).map((l,i)=>({type:'Feature',properties:{st: !state.nav?'current': i<li?'done': i===li?'current':'todo'},
     geometry:{type:'LineString',coordinates:l.pts.map(p=>[p[1],p[0]])}}));
+  if(state.settings.mode==='bike') (state.legs||[]).forEach((l,i)=>{ if(state.nav&&i<li) return;
+    l.steps.forEach(st=>{ if(isPush(st)&&st.geometry) feats.push({type:'Feature',properties:{st:'push'},geometry:{type:'LineString',coordinates:st.geometry.coordinates}}); }); });
   map.getSource('route').setData({type:'FeatureCollection',features:feats});
 }
 function drawStopMarkers(){
@@ -743,8 +741,8 @@ function fitTour(){
 function showView(id){ ['viewPlan','viewPreview','viewNav','viewDone'].forEach(v=>$('#'+v).hidden=(v!==id)); $('#sheet').scrollTop=0; setSheet(false); }
 function visibleSheet(){ const sh=$('#sheet'); return sh.offsetHeight - (sheetCollapsed? collapseOffset():0); }
 function positionLocate(){ requestAnimationFrame(()=>{ const base=visibleSheet()+12, pl=$('#player');
-  if(pl) pl.style.bottom=base+'px';
-  $('#locateBtn').style.bottom=(pl&&!pl.hidden? base+pl.offsetHeight+10 : base)+'px'; }); }
+  $('#locateBtn').style.bottom=base+'px';
+  if(pl) pl.style.bottom=(base+48+10)+'px'; }); }
 
 /* ---------- Wischbares Menü ---------- */
 let sheetCollapsed=false;
@@ -866,7 +864,7 @@ async function doPlan(){
       const slack=s.minutes-tourTime(seq,start,s.mode,s.loop);
       res=await routeSpecs(start,chooseVias(start,targets,s.mode,slack),s.mode);
       const meters=res.legs.reduce((a,l)=>a+l.distance,0);
-      total=meters/SPEED[s.mode]+seq.reduce((a,st)=>a+dwellOf(st,s.mode),0);
+      total=travelMin(res.legs,s.mode)+seq.reduce((a,st)=>a+dwellOf(st,s.mode),0);
       if(total<=s.minutes*1.1 || seq.length<=1 || tries>=4) break;
       const worst=seq.reduce((w,st)=>scoreOf(st,s.themes)<scoreOf(w,s.themes)?st:w,seq[0]);
       seq=seq.filter(st=>st!==worst); tries++;
@@ -883,7 +881,10 @@ function renderPreview(total){
   $('#pvEyebrow').textContent=(s.mode==='bike'?'Mit dem Rad':'Zu Fuß')+' · '+labels.slice(0,2).join(', ')+(labels.length>2?' …':'');
   $('#pvTitle').textContent=state.tour.length+' Stationen durch Augsburg';
   $('#pvStats').innerHTML=`<div class="stat"><b>${fmtMin(total)}</b><span>Dauer</span></div><div class="stat"><b>${fmtDist(meters)}</b><span>Strecke</span></div><div class="stat"><b>${state.tour.length}</b><span>Stopps</span></div><div class="stat"><b>${state.legs.reduce((a,l)=>a+l.vias.length,0)}</b><span>Unterwegs-Geschichten</span></div>`;
-  const w=$('#pvWarn'); w.hidden=state.routeOk; w.textContent='Der Routing-Dienst ist gerade nicht erreichbar. Die Linien zeigen nur die Luftlinie, Abbiegehinweise fehlen.';
+  const w=$('#pvWarn'), pm=s.mode==='bike'? pushMeters(state.legs) : 0;
+  w.hidden=state.routeOk && pm<30;
+  w.textContent=!state.routeOk? 'Der Routing-Dienst ist gerade nicht erreichbar. Die Linien zeigen nur die Luftlinie, Abbiegehinweise fehlen.'
+    : `Davon ca. ${fmtDist(pm)} durch Fußgängerzonen. Dort musst du absteigen und schieben, die Route ist gelb markiert und die Zeit ist mit Gehtempo eingerechnet.`;
   const ol=$('#pvList'); ol.innerHTML='';
   state.tour.forEach((st,i)=>{ const li=document.createElement('li');
     li.innerHTML=`<span class="num">${i+1}</span><span class="t"><b>${esc(st.name)}</b><span>${esc(st.teaser)}</span></span><span class="m">${dwellOf(st,s.mode)} min</span>`;
@@ -920,7 +921,7 @@ function arrowSVG(st){
 async function startTour(simulate){
   const s=state.settings; follow=true;
   $('#simBar').hidden=!simulate;
-  state.nav={legIdx:0, stepIdx:0, visited:[], told:new Set(), zones:new Set(), announced:new Set(), off:0, t0:Date.now(), walked:0, last:null};
+  state.nav={legIdx:0, stepIdx:0, visited:[], told:new Set(), zones:new Set(), announced:new Set(), pushTold:new Set(), off:0, t0:Date.now(), walked:0, last:null};
   showView('viewNav'); $('#banner').hidden=false; $('#endConfirm').hidden=true;
   drawRoute(); drawStopMarkers(); updateAudioBtn();
   requestWake();
@@ -1011,12 +1012,18 @@ function updateNavUI(ll){
   $('#navTarget').textContent=leg.target.name;
   const rem=legRemaining(ll);
   $('#navDist').textContent=fmtDist(rem); $('#navEta').textContent='ca. '+fmtMin(Math.max(1,rem/SPEED[state.settings.mode]));
+  const cur=leg.steps[nav.stepIdx], pushing=state.settings.mode==='bike' && isPush(cur);
+  $('#banner').classList.toggle('push',pushing);
+  if(pushing && !nav.pushTold.has(nav.legIdx+'-'+nav.stepIdx)){
+    nav.pushTold.add(nav.legIdx+'-'+nav.stepIdx);
+    if(state.settings.turns && !Speech.busy()) Speech.say(PHRASES.push(),{key:'push',tag:'turn',interrupt:false,title:'Navigation'});
+  }
   $('#navProg').style.width=Math.round(100*nav.visited.length/n)+'%';
   $('#infoBtn').disabled=isHome; $('#skipBtn').disabled=isHome;
   const next=leg.steps[nav.stepIdx+1];
   $('#banIcon').innerHTML=arrowSVG(next||{maneuver:{type:'arrive'}});
   if(next && next.maneuver.type!=='arrive'){
-    $('#banMain').textContent=stepText(next); $('#banSub').textContent=next.name||('Richtung '+leg.target.name);
+    $('#banMain').textContent=stepText(next); $('#banSub').textContent=pushing? 'Fußgängerzone: absteigen und schieben' : (next.name||('Richtung '+leg.target.name));
     $('#banDist').textContent=fmtDist(dist(ll,llOfStep(next)));
   } else {
     $('#banMain').textContent=leg.target.name; $('#banSub').textContent=isHome?'Zurück zum Startpunkt':'Gleich da';
@@ -1144,6 +1151,8 @@ function updatePlayBtn(){
 }
 const ICON_PAUSE='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
 const ICON_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg>';
+const RATES=[1,1.25,1.5,2];
+const fmtRate=r=>String(r).replace('.',',')+'×';
 function updatePlayer(){
   const pl=$('#player'); if(!pl) return;
   const storyOpen=!$('#story').hidden;
@@ -1151,14 +1160,11 @@ function updatePlayer(){
   const it=Speech.playing;
   const show=!storyOpen && (!!it || arrivalMin);
   pl.hidden=!show; if(!show){ positionLocate(); return; }
-  pl.classList.toggle('paused',!!Speech.paused||!it);
-  $('#playerTitle').textContent= it? (it.title||'Audio') : state.storyCtx.s.name;
-  $('#playerState').textContent= !it? 'bereit' : Speech.paused? 'pausiert' : 'läuft';
-  $('#playerPause').innerHTML= (it&&!Speech.paused)? ICON_PAUSE : ICON_PLAY;
-  $('#playerPause').setAttribute('aria-label',(it&&!Speech.paused)?'Pause':'Abspielen');
-  $('#playerSpeed').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===+state.settings.rate)));
-  const nl=arrivalMin&&state.nav? state.legs[state.nav.legIdx+1] : null;
-  $('#playerSkip').firstChild.textContent= arrivalMin? (nl? 'Weiter ' : 'Ende ') : 'Überspringen ';
+  const running=it&&!Speech.paused;                       // Knopf zeigt immer die Aktion, nicht den Zustand
+  $('#playerPause').innerHTML= running? ICON_PAUSE : ICON_PLAY;
+  $('#playerPause').setAttribute('aria-label', running? 'Pause' : 'Abspielen');
+  $('#playerSpeed').textContent=fmtRate(+state.settings.rate||1);
+  $('#playerSkip').setAttribute('aria-label', arrivalMin? 'Weiter zum nächsten Stopp' : 'Überspringen');
   positionLocate();
 }
 $('#playerPause').onclick=()=>{
@@ -1166,12 +1172,11 @@ $('#playerPause').onclick=()=>{
   if(!it){ const ctx=state.storyCtx; if(ctx){ Speech.say(PHRASES.story(ctx.s),{key:'story:'+ctx.s.id,tag:'story:'+ctx.s.id,title:ctx.s.name,ref:ctx.s}); } return; }
   Speech.paused? Speech.resume() : Speech.pause();
 };
-$('#playerSpeed').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) Speech.setRate(+b.dataset.v); });
+$('#playerSpeed').onclick=()=>{ const i=RATES.indexOf(+state.settings.rate); Speech.setRate(RATES[(i+1)%RATES.length]); };
 $('#playerSkip').onclick=()=>{
   if(state.storyCtx&&state.storyCtx.mode==='arrival'){ closeStory(); return; }
   Speech.skip();
 };
-$('#playerOpen').onclick=restoreStory;
 $('#storyMinBtn').onclick=minimizeStory;
 (function initStorySwipe(){
   const el=$('#story'); let g=null;
