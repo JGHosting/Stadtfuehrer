@@ -608,6 +608,12 @@ const CITY = {
       text:'Das Wertachbrucker Tor im Norden. Elias Holl hat es Anfang des 17. Jahrhunderts umgebaut. Der Name verrät es: Von hier ging es zur Brücke über die Wertach.' },
     { id:'hbf', name:'Hauptbahnhof', wiki:'Augsburg Hauptbahnhof', ll:[48.3655,10.8857],
       text:'Der Augsburger Hauptbahnhof stammt aus den 1840er Jahren und gilt als einer der ältesten noch genutzten Großstadtbahnhöfe Deutschlands.' },
+    { id:'fuggerwelser', name:'Fugger und Welser Erlebnismuseum', wiki:'Fugger und Welser Erlebnismuseum', ll:[48.3713,10.8983],
+      text:'Hier erzählt ein Museum von den beiden großen Augsburger Handelsfamilien. Die Welser waren so mächtig, dass Kaiser Karl der Fünfte ihnen ein Stück Südamerika überließ: Ab 1528 verwalteten sie Teile des heutigen Venezuela.' },
+    { id:'dioezesan', name:'Diözesanmuseum St. Afra', wiki:'Diözesanmuseum St. Afra', ll:[48.3735,10.8960],
+      text:'Im Diözesanmuseum neben dem Dom stehen die originalen Flügel der bronzenen Domtür aus dem 11. Jahrhundert, mit Löwen, Kentauren und biblischen Szenen.' },
+    { id:'gignoux', name:'Gignoux-Haus', wiki:'Gignoux-Haus', ll:[48.3652,10.9031],
+      text:'Das Gignoux-Haus ist ein Rokoko-Palais aus dem 18. Jahrhundert. Gebaut hat es ein Kattunfabrikant, also einer, der mit bedruckten Baumwollstoffen reich wurde. Die Textilindustrie hat Augsburg lange vor den Fabrikschloten geprägt.' },
     { id:'goldsaal', name:'Elias-Holl-Platz', ll:[48.3679,10.8999],
       text:'Du bist am Elias-Holl-Platz, benannt nach dem Stadtbaumeister, dem Augsburg Rathaus, Zeughaus, Stadtmetzg und viele Tore verdankt. Kaum ein Baumeister hat eine deutsche Stadt so geprägt wie er.' },
   ],
@@ -743,35 +749,93 @@ function planTour({start,mode,minutes,themes,loop}){
 async function fetchRoute(points,mode){
   const prof=mode==='bike'?'routed-bike':'routed-foot';
   const coords=points.map(p=>p[1].toFixed(6)+','+p[0].toFixed(6)).join(';');
-  const url=`https://routing.openstreetmap.de/${prof}/route/v1/driving/${coords}?overview=false&geometries=geojson&steps=true`;
-  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000);
+  const url=`https://routing.openstreetmap.de/${prof}/route/v1/driving/${coords}?overview=false&geometries=geojson&steps=true&continue_straight=true`;
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
   try{
     const r=await fetch(url,{signal:ctrl.signal}); if(!r.ok) throw new Error('HTTP '+r.status);
     const j=await r.json(); if(j.code!=='Ok') throw new Error(j.code);
-    return j.routes[0];
+    return j.routes[0].legs;
   } finally { clearTimeout(to); }
 }
-function buildLeg(pts,steps,distance,target){
+function buildLeg(pts,steps,distance,target,vias=[]){
   const cum=[0]; for(let k=1;k<pts.length;k++) cum.push(cum[k-1]+dist(pts[k-1],pts[k]));
-  return {pts,cum,steps,distance,target};
+  return {pts,cum,steps,distance,target,vias};
 }
-function legsFromRoute(route,targets){
-  return route.legs.map((lg,i)=>{
-    const pts=[];
-    lg.steps.forEach(st=>{ const g=st.geometry.coordinates.map(c=>[c[1],c[0]]); pts.push(...(pts.length?g.slice(1):g)); });
-    return buildLeg(pts,lg.steps,lg.distance,targets[i]);
+function rawStraight(points){
+  return points.slice(1).map((b,i)=>{ const a=points[i], d=dist(a,b)*DETOUR;
+    return {distance:d, steps:[
+      {maneuver:{type:'depart',location:[a[1],a[0]]},distance:d,name:'',geometry:{coordinates:[[a[1],a[0]],[b[1],b[0]]]}},
+      {maneuver:{type:'arrive',location:[b[1],b[0]]},distance:0,name:'',geometry:{coordinates:[[b[1],b[0]]]}}]}; });
+}
+function turnMod(b1,b2){
+  if(b1==null||b2==null) return 'straight';
+  const d=((b2-b1+540)%360)-180, a=Math.abs(d), side=d>0?'right':'left';
+  if(a<25) return 'straight'; if(a<60) return 'slight '+side; if(a<140) return side; if(a<170) return 'sharp '+side; return 'uturn';
+}
+/* OSRM-Teilstrecken über Zwischenpunkte wieder zu einer Etappe pro Ziel zusammenfügen */
+function mergeLegs(raw,specs){
+  let i=0;
+  return specs.map(sp=>{
+    const parts=raw.slice(i,i+sp.vias.length+1); i+=parts.length;
+    const steps=[]; let distance=0;
+    parts.forEach((lg,pi)=>{
+      distance+=lg.distance;
+      lg.steps.forEach((st,si)=>{
+        if(si===lg.steps.length-1 && pi<parts.length-1) return;           // Ankunft am Zwischenpunkt weglassen
+        if(si===0 && pi>0){                                                // Abfahrt am Zwischenpunkt = Weiterlaufen
+          const arr=parts[pi-1].steps[parts[pi-1].steps.length-1];
+          const mod=turnMod(arr.maneuver.bearing_before, st.maneuver.bearing_after);
+          if(mod==='straight' && steps.length){
+            const prev=steps[steps.length-1];
+            steps[steps.length-1]={...prev, distance:prev.distance+st.distance,
+              geometry:{coordinates:[...prev.geometry.coordinates,...st.geometry.coordinates.slice(1)]}};
+          } else steps.push({...st, maneuver:{...st.maneuver, type:'turn', modifier:mod}});
+          return;
+        }
+        steps.push(st);
+      });
+    });
+    const pts=[]; steps.forEach(st=>{ const g=st.geometry.coordinates.map(c=>[c[1],c[0]]); pts.push(...(pts.length?g.slice(1):g)); });
+    return buildLeg(pts,steps,distance,sp.target,sp.vias);
   });
 }
-function straightLegs(points,targets){
-  return targets.map((t,i)=>{
-    const a=points[i], b=points[i+1], d=dist(a,b)*DETOUR;
-    const steps=[{maneuver:{type:'depart',location:[a[1],a[0]]},distance:d,name:''},{maneuver:{type:'arrive',location:[b[1],b[0]]},distance:0,name:''}];
-    return buildLeg([a,b],steps,d,t);
-  });
+/* Schönste statt schnellste Route: Zwischenpunkte an Sehenswürdigkeiten am Wegesrand einbauen */
+function chooseVias(origin,targets,mode,slackMin,exclude=new Set()){
+  const inTour=new Set(targets.filter(t=>t.stop).map(t=>t.stop.id));
+  const pool=[...CITY.wayside.map(w=>({p:w,val:1})), ...CITY.stops.filter(x=>!inTour.has(x.id)).map(x=>({p:x,val:1.4}))]
+    .filter(c=>!exclude.has(c.p.id));
+  const specs=targets.map(t=>({target:t,vias:[]})), used=new Set();
+  let slack=Math.max(0,slackMin)*SPEED[mode]/DETOUR;                       // Luftlinien-Meter, die wir „verschenken“ dürfen
+  const maxPerLeg=mode==='bike'?6:5;
+  for(;;){
+    let best=null;
+    specs.forEach((sp,si)=>{
+      if(sp.vias.length>=maxPerLeg) return;
+      const from=si===0? origin : specs[si-1].target.ll;
+      const chain=[from,...sp.vias.map(v=>v.ll),sp.target.ll];
+      let len=0; for(let k=1;k<chain.length;k++) len+=dist(chain[k-1],chain[k]);
+      const direct=dist(from,sp.target.ll), cap=direct*(mode==='bike'?1.5:1.7)+180;
+      for(const c of pool){
+        if(used.has(c.p.id)) continue;
+        for(let k=1;k<chain.length;k++){
+          const a=chain[k-1], b=chain[k];
+          if(dist(a,c.p.ll)<45||dist(b,c.p.ll)<45) continue;                // liegt eh direkt am Punkt
+          const add=dist(a,c.p.ll)+dist(c.p.ll,b)-dist(a,b);
+          if(add>slack||len+add>cap) continue;
+          const r=c.val/(add+60);
+          if(!best||r>best.r) best={r,si,k,c,add};
+        }
+      }
+    });
+    if(!best) break;
+    specs[best.si].vias.splice(best.k-1,0,best.c.p); used.add(best.c.p.id); slack-=best.add;
+  }
+  return specs;
 }
-async function routeLegs(points,targets,mode){
-  try{ return {legs:legsFromRoute(await fetchRoute(points,mode),targets), ok:true}; }
-  catch(e){ return {legs:straightLegs(points,targets), ok:false}; }
+async function routeSpecs(origin,specs,mode){
+  const points=[origin]; specs.forEach(sp=>{ sp.vias.forEach(v=>points.push(v.ll)); points.push(sp.target.ll); });
+  try{ return {legs:mergeLegs(await fetchRoute(points,mode),specs), ok:true}; }
+  catch(e){ return {legs:mergeLegs(rawStraight(points),specs), ok:false}; }
 }
 
 /* =====================================================================
@@ -812,11 +876,13 @@ try{
     center:[CITY.center[1],CITY.center[0]], zoom:14.4, attributionControl:{compact:true}});
   map.on('load',()=>{
     map.addSource('route',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
-    map.addLayer({id:'route-casing',type:'line',source:'route',layout:{'line-join':'round','line-cap':'round'},
-      paint:{'line-color':'#ffffff','line-width':9,'line-opacity':['match',['get','st'],'done',0.5,1]}});
-    map.addLayer({id:'route-line',type:'line',source:'route',layout:{'line-join':'round','line-cap':'round'},
-      paint:{'line-color':['match',['get','st'],'done','#8A9A92','current','#A6322A','#C9675D'],'line-width':['match',['get','st'],'current',6,5],
-             'line-dasharray':['match',['get','st'],'todo',['literal',[1.2,1.4]],['literal',[1,0]]]}});
+    try{
+      const lay={'line-join':'round','line-cap':'round'};
+      map.addLayer({id:'route-casing',type:'line',source:'route',layout:lay,paint:{'line-color':'#ffffff','line-width':10,'line-opacity':0.9}});
+      map.addLayer({id:'route-done',type:'line',source:'route',filter:['==',['get','st'],'done'],layout:lay,paint:{'line-color':'#8A9A92','line-width':5}});
+      map.addLayer({id:'route-todo',type:'line',source:'route',filter:['==',['get','st'],'todo'],layout:{'line-join':'round'},paint:{'line-color':'#C9675D','line-width':5,'line-dasharray':[1.4,1.2]}});
+      map.addLayer({id:'route-current',type:'line',source:'route',filter:['==',['get','st'],'current'],layout:lay,paint:{'line-color':'#A6322A','line-width':6}});
+    }catch(err){ console.error(err); }
     mapReadyResolve();
   });
   map.on('click',e=>onMapTap([e.lngLat.lat,e.lngLat.lng]));
@@ -855,6 +921,7 @@ function drawStopMarkers(){
     const node=el('mk'+(visited?' done':'')+(isNext?' next':''), visited?'✓':String(i+1));
     markers.stops.push(addMarker(node,s.ll,()=>openStory(s,{mode:'preview'})));
   });
+  (state.legs||[]).forEach(l=>l.vias.forEach(v=>{ if(v.story) markers.stops.push(addMarker(el('mk-small'),v.ll,()=>openStory(v,{mode:'preview'}))); }));
 }
 function fitTour(){
   if(!map||!state.legs) return;
@@ -884,35 +951,37 @@ function setSheet(collapsed){
   setTimeout(positionLocate,320); positionLocate();
 }
 (function initSheetDrag(){
-  const sh=$('#sheet'); let y0=null, dragging=false, base=0, pid=null, startT=0, justDragged=false;
-  sh.addEventListener('pointerdown',e=>{
-    if(e.target.closest('input,select,textarea')) return;
-    y0=e.clientY; dragging=false; pid=e.pointerId; startT=performance.now();
-    base=sheetCollapsed? collapseOffset() : 0;
-  });
-  sh.addEventListener('pointermove',e=>{
-    if(y0==null||e.pointerId!==pid) return;
-    const dy=e.clientY-y0;
-    if(!dragging){
-      const onGrip=!!e.target.closest('#grip');
-      const canDown = dy>8 && (sh.scrollTop<=0||onGrip);
-      const canUp = dy<-8 && sheetCollapsed;
-      if(!(canDown||canUp)) { if(Math.abs(dy)>8) y0=null; return; }
-      dragging=true; sh.classList.add('dragging'); try{ sh.setPointerCapture(pid); }catch(_){}
+  const sh=$('#sheet'); let g=null, justDragged=false;
+  const begin=(y,target)=>{ g={y0:y, y:y, t:performance.now(), dragging:false, decided:false, base:sheetCollapsed?collapseOffset():0, grip:!!target.closest('#grip'), top:sh.scrollTop<=0}; };
+  const move=(y,ev)=>{
+    if(!g) return; const dy=y-g.y0; g.y=y;
+    if(!g.decided){
+      if(dy===0) return;
+      g.decided=true;
+      // Nach unten ziehen, wenn ganz oben gescrollt (oder am Griff) → Menü schließen; nach oben ziehen, wenn eingeklappt → öffnen
+      g.dragging = g.grip || sheetCollapsed || (dy>0 && g.top && sh.scrollTop<=0);
+      if(!g.dragging){ g=null; return; }
+      sh.classList.add('dragging'); g.y0=y;
     }
-    e.preventDefault();
-    const t=Math.max(0, Math.min(collapseOffset(), base+dy));
+    if(ev.cancelable) ev.preventDefault();
+    const t=Math.max(0, Math.min(collapseOffset(), g.base+(y-g.y0)));
     sh.style.transform=`translateY(${t}px)`;
-  },{passive:false});
-  const end=e=>{
-    if(y0==null) return;
-    const dy=e.clientY-y0, fast=Math.abs(dy)/(performance.now()-startT)>0.5; y0=null;
-    if(!dragging) return;
-    dragging=false; sh.classList.remove('dragging'); justDragged=true; setTimeout(()=>justDragged=false,80);
-    if(dy>60||(fast&&dy>20)) setSheet(true); else if(dy<-60||(fast&&dy<-20)) setSheet(false); else setSheet(sheetCollapsed);
   };
-  sh.addEventListener('pointerup',end); sh.addEventListener('pointercancel',end);
-  sh.addEventListener('click',e=>{ if(justDragged) return; if(e.target.closest('#grip')) setSheet(!sheetCollapsed); else if(sheetCollapsed && !e.target.closest('button')) setSheet(false); });
+  const finish=()=>{
+    if(!g) return; const st=g; g=null; if(!st.dragging) return;
+    const dy=st.y-st.y0, v=dy/Math.max(1,performance.now()-st.t);
+    sh.classList.remove('dragging'); justDragged=true; setTimeout(()=>justDragged=false,120);
+    if(dy>70||v>0.45) setSheet(true); else if(dy<-50||v<-0.45) setSheet(false); else setSheet(sheetCollapsed);
+  };
+  // Touch (iPhone): touchmove nicht passiv, damit wir das Scrollen übernehmen können
+  sh.addEventListener('touchstart',e=>{ if(e.touches.length!==1||e.target.closest('input[type=range]')) { g=null; return; } begin(e.touches[0].clientY,e.target); },{passive:true});
+  sh.addEventListener('touchmove',e=>{ if(e.touches.length===1) move(e.touches[0].clientY,e); },{passive:false});
+  sh.addEventListener('touchend',finish); sh.addEventListener('touchcancel',finish);
+  // Maus (Desktop)
+  sh.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||e.target.closest('input,select,textarea')) return; begin(e.clientY,e.target); });
+  window.addEventListener('pointermove',e=>{ if(e.pointerType==='mouse'&&g) move(e.clientY,e); });
+  window.addEventListener('pointerup',e=>{ if(e.pointerType==='mouse') finish(); });
+  sh.addEventListener('click',e=>{ if(justDragged){ e.stopPropagation(); return; } if(e.target.closest('#grip')) setSheet(!sheetCollapsed); else if(sheetCollapsed && !e.target.closest('button')) setSheet(false); },true);
   $('#grip').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); setSheet(!sheetCollapsed); } });
 })();
 function bindSeg(id,key,onChange){
@@ -980,15 +1049,16 @@ async function doPlan(){
     if(s.startKind==='pick' && !state.pickLL){ notice('Tippe zuerst auf die Karte, um den Startpunkt zu setzen.'); return; }
     if(!state.start) setStart(CITY.starts.rathaus.ll);
     await wikiReady;
-    const start=state.start, opts={start,mode:s.mode,minutes:s.minutes,themes:s.themes,loop:s.loop};
-    let seq=planTour(opts);
+    const start=state.start, SCENIC=0.85;   // 15 % der Zeit bleiben für Umwege zu Sehenswertem am Wegesrand
+    let seq=planTour({start,mode:s.mode,minutes:s.minutes*SCENIC,themes:s.themes,loop:s.loop});
+    if(!seq.length) seq=planTour({start,mode:s.mode,minutes:s.minutes,themes:s.themes,loop:s.loop});
     if(!seq.length){ notice('In dieser Zeit ist kein passender Stopp erreichbar. Wähle mehr Zeit oder andere Themen.',6000); return; }
     let res, tries=0, total;
     for(;;){
       const targets=seq.map(st=>({name:st.name,ll:st.ll,stop:st}));
       if(s.loop) targets.push({name:'Zurück zum Start',ll:start,home:true});
-      const points=[start,...seq.map(st=>st.ll)]; if(s.loop) points.push(start);
-      res=await routeLegs(points,targets,s.mode);
+      const slack=s.minutes-tourTime(seq,start,s.mode,s.loop);
+      res=await routeSpecs(start,chooseVias(start,targets,s.mode,slack),s.mode);
       const meters=res.legs.reduce((a,l)=>a+l.distance,0);
       total=meters/SPEED[s.mode]+seq.reduce((a,st)=>a+dwellOf(st,s.mode),0);
       if(total<=s.minutes*1.1 || seq.length<=1 || tries>=4) break;
@@ -1006,7 +1076,7 @@ function renderPreview(total){
   const labels=THEMES.filter(t=>s.themes.includes(t.id)).map(t=>t.label);
   $('#pvEyebrow').textContent=(s.mode==='bike'?'Mit dem Rad':'Zu Fuß')+' · '+labels.slice(0,2).join(', ')+(labels.length>2?' …':'');
   $('#pvTitle').textContent=state.tour.length+' Stationen durch Augsburg';
-  $('#pvStats').innerHTML=`<div class="stat"><b>${fmtMin(total)}</b><span>Dauer</span></div><div class="stat"><b>${fmtDist(meters)}</b><span>Strecke</span></div><div class="stat"><b>${state.tour.length}</b><span>Stopps</span></div>`;
+  $('#pvStats').innerHTML=`<div class="stat"><b>${fmtMin(total)}</b><span>Dauer</span></div><div class="stat"><b>${fmtDist(meters)}</b><span>Strecke</span></div><div class="stat"><b>${state.tour.length}</b><span>Stopps</span></div><div class="stat"><b>${state.legs.reduce((a,l)=>a+l.vias.length,0)}</b><span>Unterwegs-Geschichten</span></div>`;
   const w=$('#pvWarn'); w.hidden=state.routeOk; w.textContent='Der Routing-Dienst ist gerade nicht erreichbar. Die Linien zeigen nur die Luftlinie, Abbiegehinweise fehlen.';
   const ol=$('#pvList'); ol.innerHTML='';
   state.tour.forEach((st,i)=>{ const li=document.createElement('li');
@@ -1101,7 +1171,7 @@ function checkWayside(ll){
   const pool=[...CITY.wayside, ...CITY.stops.filter(s=>!inTour.has(s.id))];
   for(const w of pool){
     if(nav.told.has(w.id)) continue;
-    if(dist(ll,w.ll)<38){ nav.told.add(w.id); tellWayside(w.name, w.text || `${w.name}. ${w.teaser} ${w.fact}`, 'Am Wegesrand'); return; }
+    if(dist(ll,w.ll)<45){ nav.told.add(w.id); tellWayside(w.name, w.text || `${w.name}. ${w.teaser} ${w.fact}`, 'Am Wegesrand'); return; }
   }
   for(const z of CITY.zones){
     if(nav.zones.has(z.id)) continue;
@@ -1113,7 +1183,8 @@ function tellWayside(title,text,eyebrow){
   $('#toastEyebrow').textContent=eyebrow; $('#toastTitle').textContent=title; $('#toastTitle').hidden=!title; $('#toastText').textContent=text; $('#toast').hidden=false;
   clearTimeout(toastTimer);
   const hide=()=>{ toastTimer=setTimeout(()=>$('#toast').hidden=true,5000); };
-  if(!Speech.busy() && state.settings.audio){ Speech.say(text,{tag:'way',interrupt:false,onend:hide}); } else toastTimer=setTimeout(()=>$('#toast').hidden=true,20000);
+  const storyPlaying=Speech.busy() && Speech.tag && Speech.tag.startsWith('story');
+  if(state.settings.audio && !storyPlaying){ Speech.say(text,{tag:'way',interrupt:false,onend:hide}); } else toastTimer=setTimeout(()=>$('#toast').hidden=true,20000);
 }
 
 function legRemaining(ll){
@@ -1171,8 +1242,7 @@ async function reroute(){
   const nav=state.nav; if(!nav||!state.pos) return;
   const btn=$('#rerouteBtn'); btn.disabled=true; btn.textContent='Berechne neu …';
   const targets=state.legs.slice(nav.legIdx).map(l=>l.target);
-  const points=[state.pos,...targets.map(t=>t.ll)];
-  const res=await routeLegs(points,targets,state.settings.mode);
+  const res=await routeSpecs(state.pos,chooseVias(state.pos,targets,state.settings.mode,12,nav.told),state.settings.mode);
   state.legs.splice(nav.legIdx,state.legs.length-nav.legIdx,...res.legs);
   nav.stepIdx=0; nav.off=0; if(state.sim){ state.sim.dist=0; state.sim.teleported=false; }
   btn.hidden=true; btn.disabled=false; btn.textContent='Du bist von der Route abgekommen · Neu berechnen';
