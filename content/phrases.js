@@ -9,8 +9,18 @@ globalThis.PHRASES = {
   next: s => `Weiter geht’s zu: ${s.name}.`,
   push: () => 'Achtung, Fußgängerzone. Bitte absteigen und das Rad schieben.',
   home: () => 'Das war die letzte Station. Jetzt geht es zurück zum Startpunkt.',
-  end: c => `Das war deine Tour durch ${c.name}. Danke fürs Mitkommen und servus!`,
-  test: c => `Servus! So klinge ich, wenn ich dir unterwegs Geschichten über ${c.name} erzähle.`,
+  /* Begrüßung und Abschied im Dialekt der Stadt (dialect in der Stadtdatei), sonst Hochdeutsch */
+  end: c => `Das war deine Tour durch ${c.name}. Danke fürs Mitkommen und ${(c.dialect&&c.dialect.bye)||'auf Wiedersehen'}!`,
+  test: c => `${(c.dialect&&c.dialect.hello)||'Hallo'}! So klinge ich, wenn ich dir unterwegs Geschichten über ${c.name} erzähle.`,
+  /* Englische Wörter für die rein deutschen Stimmen in deutscher Lautschrift (Gemini bekommt das Original) */
+  phonetic: [
+    ['\\bFunfacts?\\b','Fann-Fäkt'], ['\\bHighlights?\\b','Hailait'], ['\\bHightech\\b','Hai-Tech'],
+    ['\\bOpen-Air\\b','Oupen-Ähr'], ['\\bMust-See\\b','Mast-Sie'], ['\\bStreet Art\\b','Striet-Art'],
+    ['\\bSurfer\\b','Sörfer'], ['\\bsurfen\\b','sörfen'], ['\\bgesurft\\b','gesörft'], ['\\bSurfbrettern\\b','Sörfbrettern'],
+    ['\\bBoule\\b','Bul'], ['\\bCafés?\\b','Kaffee'],
+  ],
+  phoneticPairs(){ return this.phonetic; },
+  applyPhonetic(t){ for(const [p,r] of this.phonetic) t=t.replace(new RegExp(p,'g'),r); return t; },
   turns: {
     'left':'Gleich links abbiegen.', 'right':'Gleich rechts abbiegen.',
     'slight left':'Gleich leicht links halten.', 'slight right':'Gleich leicht rechts halten.',

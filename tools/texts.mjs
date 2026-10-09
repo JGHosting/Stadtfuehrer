@@ -8,5 +8,6 @@ for (const c of vm.runInContext('CITIES', ctx)) {
   run(c.file);
   out[c.id] = vm.runInContext(`PHRASES.items(CITY_DATA[${JSON.stringify(c.id)}])`, ctx);
 }
+fs.writeFileSync('phonetic.json', JSON.stringify(vm.runInContext('PHRASES.phoneticPairs()', ctx)));
 fs.writeFileSync('city-names.json', JSON.stringify(Object.fromEntries(vm.runInContext('CITIES', ctx).map(c=>[c.id,c.name]))));
 process.stdout.write(JSON.stringify(out, null, 1));

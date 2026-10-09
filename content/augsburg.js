@@ -18,6 +18,8 @@
     {id:'natur',      label:'Natur & Aussicht',    stops:['perlach','eiskanal','botgarten','hochablass','lueginsland','fronhof']},
   ],
 
+  /* Begrüßung und Abschied im Dialekt der Stadt */
+  dialect:{hello:'Servus', bye:'servus, bis bald'},
   intro:'Servus und willkommen in Augsburg! Diese Stadt ist über zweitausend Jahre alt, war einmal eine der reichsten Städte Europas und hat mehr Geschichten auf Lager, als in eine einzige Tour passen.',
   stops:[
   { id:'rathaus', name:'Rathaus', wiki:'Augsburger Rathaus', ll:[48.3687,10.8986], dwell:10,
@@ -253,6 +255,16 @@
     look:'Den Japangarten mit seiner Brücke.' },
   ],
 
+  /* Schöne Wege: Kanäle, Gassen, Grünanlagen. Die Route führt bevorzugt hier entlang (ohne Ansage). */
+  scenic:[
+    {id:'vordererlech',   name:'Vorderer Lech',                ll:[48.3664,10.9013], weight:1.5},
+    {id:'hintererlech',   name:'Hinterer Lech',                ll:[48.3652,10.9030], weight:1.4},
+    {id:'maxstrasse',     name:'Maximilianstraße',             ll:[48.3650,10.8997]},
+    {id:'hofgarten_a',    name:'Hofgarten',                    ll:[48.3716,10.8952], weight:1.4},
+    {id:'stadtgraben_o',  name:'Stadtgraben Ost',              ll:[48.3690,10.9088]},
+    {id:'rotestor_wall',  name:'Wallanlagen am Roten Tor',     ll:[48.3588,10.9025]},
+    {id:'wittelsbacher',  name:'Wittelsbacher Park',           ll:[48.3578,10.8863]},
+  ],
   wayside:[
     { id:'merkur', name:'Merkurbrunnen', wiki:'Merkurbrunnen (Augsburg)', ll:[48.3664,10.8990],
       text:'Der Merkurbrunnen. Merkur ist der Götterbote und Schutzgott der Kaufleute. Adriaen de Vries hat ihn 1599 geschaffen. Zu seinen Füßen löst ein Amor seine Sandale: Merkur soll bleiben, und mit ihm Handel und Reichtum in der Stadt.' },

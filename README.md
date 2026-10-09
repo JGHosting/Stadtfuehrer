@@ -17,11 +17,10 @@ Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit 
 - Karte: OpenFreeMap (OpenStreetMap-Daten) mit MapLibre
 - Routing: routing.openstreetmap.de (OSRM, betrieben von FOSSGIS) – Fair-Use, für einen Prototyp okay; für die Store-Version eigenen Server aufsetzen
 - Fotos & genaue Koordinaten: Wikipedia-API
-- Vorlesen: Sprachausgabe des Geräts
+- Vorlesen: vorab erzeugte KI-Audios (Gemini, Katja/Conrad), Gerätestimme als Ersatz
 
 ## Grenzen des Prototyps
 - Als Web-App läuft die Standortverfolgung nur bei eingeschaltetem Bildschirm (die App hält ihn wach).
-- Die Stimme ist die eingebaute Gerätestimme.
 
 ## KI-Stimme
 Die Vorlese-Texte stehen in `content/augsburg.js` und `content/phrases.js`. Beim Deploy erzeugt GitHub Actions
@@ -45,5 +44,14 @@ Kategorien (Geschichte, Kirchen, …). Jede Liste ist nach Berühmtheit sortiert
 1. Must-See (wenn gewählt) kommen in ihrer Reihenfolge auf die Tour, solange sie in ca. 70 % der Zeit passen.
 2. Die anderen gewählten Kategorien im Reißverschluss: von jeder die berühmteste, dann die zweitberühmteste usw.
    Stationen, für die man einen großen Umweg laufen müsste, werden übersprungen.
-3. Etwa 10 % der Zeit bleiben für kleine Umwege zu Sehenswertem am Wegesrand – nur Punkte, die grob auf dem Weg liegen,
-   jede Etappe höchstens ca. 1,35-mal so lang wie der direkte Weg, und ohne doppelt gelaufene Wegstücke.
+3. Etwa 15 % der Zeit bleiben für Umwege durch Parks, Gassen und an Sehenswertem vorbei. Kandidaten sind die
+   Wegesrand-Geschichten, nicht eingeplante Stationen und die „schönen Wege“ der Stadt (`scenic` in der Stadtdatei:
+   Parks, Ufer, Gassen – ohne Ansage, nur damit die Route dort entlangführt). Jede Etappe höchstens ca. 1,75-mal so lang
+   wie der direkte Weg. Führt ein Umweg zu doppelt gelaufenen Wegstücken, wird er wieder herausgenommen.
+
+## Dialekt
+`dialect` in der Stadtdatei legt Begrüßung und Abschied fest (z. B. Bayern: „Servus“ / „pfiat di“). Ohne Angabe: Hochdeutsch.
+
+## Aussprache
+`PHRASES.spoken` schreibt Zahlen und Abkürzungen in Sprechform um. `PHRASES.phonetic` enthält englische Wörter in deutscher
+Lautschrift für die rein deutschen Stimmen (z. B. Funfact → Fann-Fäkt). Gemini bekommt den Originaltext.

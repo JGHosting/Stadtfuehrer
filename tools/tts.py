@@ -50,9 +50,12 @@ def pcm_to_mp3(pcm, rate, path):
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "s16le", "-ar", str(rate), "-ac", "1", "-i", "pipe:0",
                     "-codec:a", "libmp3lame", "-b:a", "64k", path], input=pcm, check=True)
 
-def run_gemini(TEXTS, manifest, city_name, state):
+def note(state, msg):
+    print(msg, flush=True); state["log"] = (state.get("log", []) + [msg])[-12:]
+
+def run_gemini(TEXTS, manifest, city_name, state, city):
     if not GEMINI_KEY:
-        print("gemini: kein GEMINI_API_KEY – übersprungen"); return
+        note(state, "gemini: kein GEMINI_API_KEY – übersprungen"); return
     m, todo = {}, []
     style_story = STYLE_STORY.replace("{city}", city_name)
     for key in sorted(TEXTS, key=priority):
@@ -76,27 +79,36 @@ def run_gemini(TEXTS, manifest, city_name, state):
             except urllib.error.HTTPError as e:
                 msg = e.read().decode(errors="ignore")
                 if e.code == 404 or (e.code == 400 and "not found" in msg.lower()):
-                    print(f"  Modell {models[0]} nicht verfügbar, nächstes …"); models.pop(0); continue
+                    note(state, f"Modell {models[0]} nicht verfügbar: {msg[:160]}"); models.pop(0); continue
                 if e.code == 429:
                     if "PerDay" in msg or "per day" in msg.lower():
-                        print("gemini: Tageskontingent aufgebraucht – Rest beim nächsten Lauf"); models.clear(); break
+                        note(state, "Tageskontingent aufgebraucht – Rest beim nächsten Lauf"); state["quota"] = True; models.clear(); break
                     wait = 30
                     try:
                         for d in json.loads(msg)["error"].get("details", []):
                             if "retryDelay" in d: wait = int(float(d["retryDelay"].rstrip("s"))) + 2
                     except Exception: pass
                     print(f"  Limit erreicht, warte {wait}s …", flush=True); time.sleep(min(wait, 90)); continue
-                print(f"  ✗ {key}: HTTP {e.code} {msg[:200]}"); time.sleep(5)
+                note(state, f"Fehler bei {key}: HTTP {e.code} {msg[:200]}"); time.sleep(5)
             except Exception as e:
-                print(f"  ✗ {key}: {e}"); time.sleep(5)
+                note(state, f"Fehler bei {key}: {e}"); time.sleep(5)
         if not models: break
     print(f"gemini: {done} neu erzeugt, {len(m)}/{len(TEXTS)} vorhanden", flush=True)
+    state.setdefault("cities", {})[city] = {"fertig": len(m), "gesamt": len(TEXTS), "neu_in_diesem_lauf": done}
     manifest["voices"]["gemini"] = m
 
 # ---------------------------------------------------------------- edge-tts
 # Rein deutsche Stimmen: Die „Multilingual“-Stimmen raten die Sprache pro Satz und lesen kurze Titel oft englisch.
 EDGE_VOICES = {"katja":  ["de-DE-KatjaNeural"],
                "conrad": ["de-DE-ConradNeural"]}
+
+# Die rein deutschen Microsoft-Stimmen lesen englische Wörter deutsch („Funfass“). Für sie wird vorher lautschriftlich umgeschrieben.
+# Gemini bekommt den Originaltext, es erkennt englische Wörter selbst.
+PHONETIC = json.load(open("phonetic.json", encoding="utf-8")) if os.path.exists("phonetic.json") else []
+import re as _re
+def phonetic(text):
+    for pat, rep_ in PHONETIC: text = _re.sub(pat, rep_, text)
+    return text
 
 async def run_edge(TEXTS, manifest):
     import edge_tts
@@ -115,6 +127,7 @@ async def run_edge(TEXTS, manifest):
     for vid, cands in EDGE_VOICES.items():
         m, jobs = {}, []
         for key, text in TEXTS.items():
+            text = phonetic(text)
             fname = f"{vid}-" + hashlib.sha1(f"{cands[0]}|{text}".encode()).hexdigest()[:16] + ".mp3"
             m[key] = fname; path = os.path.join(OUT, fname)
             if not os.path.exists(path) or os.path.getsize(path) < 1000: jobs.append(render(cands, text, path))
@@ -123,13 +136,18 @@ async def run_edge(TEXTS, manifest):
         manifest["voices"][vid] = m
 
 # Eine Manifest-Datei pro Stadt: audio/manifest-<stadt>.json  (die App lädt nur die der gewählten Stadt)
-keep, gstate = set(), {"models": list(GEMINI_MODELS), "t0": time.time()}
+keep, gstate = set(), {"models": list(GEMINI_MODELS), "t0": time.time(), "log": []}
 for city, TEXTS in ALL.items():
     print(f"=== {city}: {len(TEXTS)} Texte", flush=True)
     manifest = {"voices": {}}
     asyncio.run(run_edge(TEXTS, manifest))
-    run_gemini(TEXTS, manifest, CITY_NAMES.get(city, city.capitalize()), gstate)
+    run_gemini(TEXTS, manifest, CITY_NAMES.get(city, city.capitalize()), gstate, city)
     keep |= {f for m in manifest["voices"].values() for f in m.values()}
     json.dump(manifest, open(os.path.join(OUT, f"manifest-{city}.json"), "w"), indent=0)
 for f in os.listdir(OUT):
     if f.endswith(".mp3") and f not in keep: os.remove(os.path.join(OUT, f))
+# Status für die App (Entwicklerbereich): Wie weit ist Gemini, was ist zuletzt passiert?
+json.dump({"zeit": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()), "gemini_aktiv": bool(GEMINI_KEY),
+           "modelle_verfuegbar": gstate["models"], "tageskontingent_erreicht": gstate.get("quota", False),
+           "staedte": gstate.get("cities", {}), "protokoll": gstate["log"]},
+          open(os.path.join(OUT, "status.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)

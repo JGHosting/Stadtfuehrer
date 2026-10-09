@@ -15,6 +15,8 @@
     {id:'bier',          label:'Bier & Märkte',          stops:['hofbraeuhaus','viktualienmarkt','chinaturm','bavaria']},
     {id:'natur',         label:'Natur & Isar',           stops:['eisbach','chinaturm','monopteros','olympiapark','hofgarten','friedensengel','nymphenburg']},
   ],
+  /* Begrüßung und Abschied im Dialekt der Stadt */
+  dialect:{hello:'Servus', bye:'pfiat di'},
   intro:'Servus und grüß Gott in München! Die Stadt ist über achthundert Jahre alt, war jahrhundertelang Residenz der Wittelsbacher und hat zu fast jeder Ecke eine Geschichte, die man sich beim Bier erzählt.',
   stops:[
   { id:'marienplatz', name:'Marienplatz und Neues Rathaus', wiki:'Neues Rathaus (München)', ll:[48.1376,11.5760], dwell:10,
@@ -216,6 +218,18 @@
     look:'Die kleinen Öffnungen im Kopf der Bavaria, durch die man von innen hinausschauen kann.' },
   ],
 
+  /* Schöne Wege: Parks, Gassen, Ufer. Die Route führt bevorzugt hier entlang (ohne Ansage). */
+  scenic:[
+    {id:'eg_eisbach',     name:'Englischer Garten am Eisbach', ll:[48.1458,11.5872]},
+    {id:'eg_schoenfeld',  name:'Schönfeldwiese',               ll:[48.1488,11.5860], weight:1.5},
+    {id:'eg_mitte',       name:'Englischer Garten Mitte',      ll:[48.1505,11.5905], weight:1.5},
+    {id:'hofgarten_ark',  name:'Hofgarten-Arkaden',            ll:[48.1426,11.5787], weight:1.5},
+    {id:'fuenfhoefe',     name:'Fünf Höfe',                    ll:[48.1404,11.5757]},
+    {id:'altbotgarten',   name:'Alter Botanischer Garten',     ll:[48.1423,11.5666]},
+    {id:'isar_prater',    name:'Isarufer an der Praterinsel',  ll:[48.1388,11.5893], weight:1.4},
+    {id:'maxanlagen',     name:'Maximiliansanlagen',           ll:[48.1405,11.5955]},
+    {id:'sendlinger',     name:'Sendlinger Straße',            ll:[48.1356,11.5710]},
+  ],
   wayside:[
     { id:'fischbrunnen', name:'Fischbrunnen', wiki:'Fischbrunnen (München)', ll:[48.1372,11.5753],
       text:'Der Fischbrunnen am Marienplatz. Hier gibt es einen schönen Brauch: Am Aschermittwoch waschen der Oberbürgermeister und viele Münchner ihre Geldbeutel im Brunnen. Das soll dafür sorgen, dass sie nie leer werden.' },

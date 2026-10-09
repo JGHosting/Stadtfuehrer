@@ -147,6 +147,7 @@ details[open].settings summary::after{content:" ▴"}
 .citylist b{font-size:16px}
 .citylist span{font-size:13px;color:var(--muted)}
 .citylist .more{padding:10px 14px;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+.devstatus{font:12px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0;max-height:220px;overflow:auto}
 .textin{font:16px var(--f-ui);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);color:var(--ink);width:100%}
 .legal-links{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;padding-top:4px}
 .legal-links a{color:var(--muted)}
@@ -329,6 +330,7 @@ details[open].settings summary::after{content:" ▴"}
         <div class="field"><span class="label">Stadt</span><div class="citylist" id="cityList"></div>
           <p class="hint">Normale Nutzer bekommen automatisch die Stadt, in der sie gerade sind.</p></div>
         <label class="toggle" id="simRow"><span>Simulationsmodus<small>Deine Position wird simuliert, per Tipp auf die Karte kannst du sie versetzen.</small></span><input type="checkbox" id="simToggle"></label>
+        <div class="field"><span class="label">KI-Audios (Stand des letzten Deploys)</span><pre class="devstatus" id="audioStatus">–</pre></div>
         <div class="field" id="devRoutingRow">
           <span class="label">Routing-Server</span>
           <input type="url" id="devRouting" class="textin" placeholder="https://…trycloudflare.com" autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -396,7 +398,7 @@ details[open].settings summary::after{content:" ▴"}
   <div id="viewDone" class="view" hidden>
     <div>
       <div class="eyebrow">Geschafft</div>
-      <h2>Servus, bis zum nächsten Mal!</h2>
+      <h2 id="doneTitle">Bis zum nächsten Mal!</h2>
     </div>
     <div class="stats" id="doneStats"></div>
     <button class="btn btn-primary" id="againBtn" type="button">Neue Tour planen</button>
@@ -685,15 +687,19 @@ function doubledMeters(legs){
   const key=(p,q)=>{ const a=p[0].toFixed(5)+','+p[1].toFixed(5), b=q[0].toFixed(5)+','+q[1].toFixed(5); return a<b? a+'|'+b : b+'|'+a; };
   const cnt=new Map();
   legs.forEach(l=>{ for(let k=1;k<l.pts.length;k++){ const kk=key(l.pts[k-1],l.pts[k]); cnt.set(kk,(cnt.get(kk)||0)+1); } });
-  return legs.map(l=>{ let m=0; for(let k=1;k<l.pts.length;k++) if(cnt.get(key(l.pts[k-1],l.pts[k]))>1) m+=dist(l.pts[k-1],l.pts[k]); return m; });
+  return legs.map(l=>{ let m=0; l.dblPts=[]; for(let k=1;k<l.pts.length;k++) if(cnt.get(key(l.pts[k-1],l.pts[k]))>1){ m+=dist(l.pts[k-1],l.pts[k]); l.dblPts.push(l.pts[k]); } return m; });
 }
 /* Route berechnen; Umwege, die zu doppelt gelaufenen Strecken führen, wieder herausnehmen */
 async function routeScenic(origin,targets,mode,slackMin,exclude){
   let specs=chooseVias(origin,targets,mode,slackMin,exclude);
   let res=await routeSpecs(origin,specs,mode);
-  for(let round=0; round<2 && res.ok; round++){
+  for(let round=0; round<3 && res.ok; round++){
     const dbl=doubledMeters(res.legs); let changed=false;
-    specs=specs.map((sp,i)=>{ if(sp.vias.length && dbl[i]>40){ changed=true; return {...sp, vias:sp.vias.slice(0,-1)}; } return sp; });
+    specs=specs.map((sp,i)=>{ if(!(sp.vias.length && dbl[i]>40)) return sp; changed=true;
+      // den Zwischenpunkt entfernen, der am nächsten an einem doppelt gelaufenen Stück liegt
+      const dp=res.legs[i].dblPts||[]; let worst=sp.vias.length-1, wd=Infinity;
+      sp.vias.forEach((v,j)=>{ for(const q of dp){ const d=dist(v.ll,q); if(d<wd){ wd=d; worst=j; } } });
+      return {...sp, vias:sp.vias.filter((_,j)=>j!==worst)}; });
     if(!changed) break;
     res=await routeSpecs(origin,specs,mode);
   }
@@ -701,11 +707,14 @@ async function routeScenic(origin,targets,mode,slackMin,exclude){
 }
 function chooseVias(origin,targets,mode,slackMin,exclude=new Set()){
   const inTour=new Set(targets.filter(t=>t.stop).map(t=>t.stop.id));
-  const pool=[...CITY.wayside.map(w=>({p:w,val:1})), ...CITY.stops.filter(x=>!inTour.has(x.id)).map(x=>({p:x,val:1.4}))]
+  // Kandidaten für Zwischenpunkte: Sehenswertes am Wegesrand, nicht eingeplante Stationen und „schöne Wege“ der Stadt
+  // (Parks, Gassen, Ufer – CITY.scenic, ohne Ansage, nur damit die Route dort entlangführt)
+  const pool=[...CITY.wayside.map(w=>({p:w,val:1})), ...CITY.stops.filter(x=>!inTour.has(x.id)).map(x=>({p:x,val:1.6})),
+              ...(CITY.scenic||[]).map(x=>({p:x,val:x.weight||1.3}))]
     .filter(c=>!exclude.has(c.p.id));
   const specs=targets.map(t=>({target:t,vias:[]})), used=new Set();
   let slack=Math.max(0,slackMin)*SPEED[mode]/DETOUR;                       // Luftlinien-Meter, die wir „verschenken“ dürfen
-  const maxPerLeg=mode==='bike'?4:3;
+  const maxPerLeg=mode==='bike'?5:4;
   for(;;){
     let best=null;
     specs.forEach((sp,si)=>{
@@ -713,7 +722,7 @@ function chooseVias(origin,targets,mode,slackMin,exclude=new Set()){
       const from=si===0? origin : specs[si-1].target.ll;
       const chain=[from,...sp.vias.map(v=>v.ll),sp.target.ll];
       let len=0; for(let k=1;k<chain.length;k++) len+=dist(chain[k-1],chain[k]);
-      const direct=dist(from,sp.target.ll), cap=direct*(mode==='bike'?1.25:1.35)+120;
+      const direct=dist(from,sp.target.ll), cap=direct*(mode==='bike'?1.5:1.75)+200;   // kleine Umwege sind erwünscht
       for(const c of pool){
         if(used.has(c.p.id)) continue;
         for(let k=1;k<chain.length;k++){
@@ -721,7 +730,7 @@ function chooseVias(origin,targets,mode,slackMin,exclude=new Set()){
           if(dist(a,c.p.ll)<45||dist(b,c.p.ll)<45) continue;                // liegt eh direkt am Punkt
           // Nur Punkte, die grob auf dem Weg liegen: kein Abstecher hin und wieder zurück
           const seg=dist(a,b), pr=projOnSeg(c.p.ll,a,b);
-          if(pr.t<0.08||pr.t>0.92||pr.d>Math.max(70,seg*0.28)) continue;
+          if(pr.t<-0.15||pr.t>1.15||pr.d>Math.max(150,seg*0.7)) continue;
           const add=dist(a,c.p.ll)+dist(c.p.ll,b)-dist(a,b);
           if(add>slack||len+add>cap) continue;
           const r=c.val/(add+60);
@@ -801,7 +810,7 @@ const Speech = {
   },
   _device(it){
     if(!this.ok){ this._done(); return; }
-    const parts=PHRASES.spoken(it.text).replace(/\s+/g,' ').match(/[^.!?…]+[.!?…]*["“”]?\s*/g)||[it.text]; const cs=[]; let cur='';
+    const parts=PHRASES.applyPhonetic(PHRASES.spoken(it.text)).replace(/\s+/g,' ').match(/[^.!?…]+[.!?…]*["“”]?\s*/g)||[it.text]; const cs=[]; let cur='';
     for(const p of parts){ if(cur&&(cur+p).length>230){ cs.push(cur.trim()); cur=p; } else cur+=p; } if(cur.trim()) cs.push(cur.trim());
     cs.forEach((c,i)=>{ const u=new SpeechSynthesisUtterance(c); u.lang='de-DE'; if(this.voice) u.voice=this.voice; u.rate=state.settings.rate||1;
       if(i===cs.length-1) u.onend=u.onerror=()=>{ if(this.playing===it) this._done(); };
@@ -1050,7 +1059,17 @@ function renderCityList(){
     ;
   l.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.dataset.id!==CITY.id) selectCity(b.dataset.id); });
 }
+async function loadAudioStatus(){
+  try{ const j=await (await fetch(AUDIO_BASE+'status.json',{cache:'no-cache'})).json();
+    const lines=[`Stand: ${j.zeit}`, `Gemini: ${j.gemini_aktiv?'Schlüssel vorhanden':'kein Schlüssel'}${j.tageskontingent_erreicht?' · Tageskontingent erreicht':''}`,
+      `Modelle: ${(j.modelle_verfuegbar||[]).join(', ')||'keins verfügbar'}`,
+      ...Object.entries(j.staedte||{}).map(([c,v])=>`${c}: ${v.fertig}/${v.gesamt} fertig (+${v.neu_in_diesem_lauf} im letzten Lauf)`),
+      ...(j.protokoll||[]).slice(-5).map(x=>'· '+x)];
+    $('#audioStatus').textContent=lines.join('\n');
+  }catch(e){ $('#audioStatus').textContent='Noch kein Status vorhanden (kommt mit dem nächsten Deploy).'; }
+}
 function applyDev(){
+  if(state.dev) loadAudioStatus();
   $('#devSection').hidden=!state.dev;
   if(!state.dev && state.settings.sim) setSimMode(false,false);
 }
@@ -1095,7 +1114,7 @@ async function doPlan(){
     if(s.startKind==='pick' && !state.pickLL){ notice('Tippe zuerst auf die Karte, um den Startpunkt zu setzen.'); return; }
     if(!state.start) setStart(CITY.starts[0].ll);
     await wikiReady;
-    const start=state.start, SCENIC=0.9;   // 10 % der Zeit bleiben für kleine Umwege zu Sehenswertem am Wegesrand
+    const start=state.start, SCENIC=0.85;   // 15 % der Zeit bleiben für Umwege durch Parks, Gassen und an Sehenswertem vorbei
     let seq=planTour({start,mode:s.mode,minutes:s.minutes*SCENIC,themes:s.themes,loop:s.loop});
     if(!seq.length) seq=planTour({start,mode:s.mode,minutes:s.minutes,themes:s.themes,loop:s.loop});
     if(!seq.length){ notice('In dieser Zeit ist kein passender Stopp erreichbar. Wähle mehr Zeit oder andere Themen.',6000); return; }
@@ -1122,7 +1141,7 @@ function renderPreview(total){
   const labels=CITY.themes.filter(t=>s.themes.includes(t.id)).map(t=>t.label);
   $('#pvEyebrow').textContent=(s.mode==='bike'?'Mit dem Rad':'Zu Fuß')+' · '+labels.slice(0,2).join(', ')+(labels.length>2?' …':'');
   $('#pvTitle').textContent=state.tour.length+' Stationen durch '+CITY.name;
-  $('#pvStats').innerHTML=`<div class="stat"><b>${fmtMin(total)}</b><span>Dauer</span></div><div class="stat"><b>${fmtDist(meters)}</b><span>Strecke</span></div><div class="stat"><b>${state.tour.length}</b><span>Stopps</span></div><div class="stat"><b>${state.legs.reduce((a,l)=>a+l.vias.length,0)}</b><span>Unterwegs-Geschichten</span></div>`;
+  $('#pvStats').innerHTML=`<div class="stat"><b>${fmtMin(total)}</b><span>Dauer</span></div><div class="stat"><b>${fmtDist(meters)}</b><span>Strecke</span></div><div class="stat"><b>${state.tour.length}</b><span>Stopps</span></div><div class="stat"><b>${state.legs.reduce((a,l)=>a+l.vias.filter(v=>v.text||v.story).length,0)}</b><span>Unterwegs-Geschichten</span></div>`;
   const w=$('#pvWarn'), pm=s.mode==='bike'? pushMeters(state.legs) : 0;
   $('#pvSource').hidden=!state.dev; $('#pvSource').textContent='Route: '+(routingConfig().provider==='valhalla'?'eigener Server ('+routingConfig().url+')':'FOSSGIS-Dienst');
   w.hidden=state.routeOk && pm<30;
@@ -1324,6 +1343,7 @@ function finishTour(){
   const mins=(Date.now()-nav.t0)/60000;
   $('#doneStats').innerHTML=`<div class="stat"><b>${nav.visited.length}</b><span>Stationen</span></div><div class="stat"><b>${fmtDist(nav.walked)}</b><span>Unterwegs</span></div><div class="stat"><b>${fmtMin(Math.max(1,mins))}</b><span>Zeit</span></div>`;
   $('#banner').hidden=true; $('#toast').hidden=true;
+  $('#doneTitle').textContent=`${(CITY.dialect&&CITY.dialect.hello)||'Danke'}, bis zum nächsten Mal!`;
   showView('viewDone');
   Speech.say(PHRASES.end(CITY),{key:'end',tag:'end',title:'Tour beendet'});
   state.nav=null; drawRoute(); drawStopMarkers();
