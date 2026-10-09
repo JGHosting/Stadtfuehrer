@@ -646,7 +646,7 @@ const Speech = {
   },
   _device(it){
     if(!this.ok){ this._done(); return; }
-    const parts=it.text.replace(/\s+/g,' ').match(/[^.!?…]+[.!?…]*["“”]?\s*/g)||[it.text]; const cs=[]; let cur='';
+    const parts=PHRASES.spoken(it.text).replace(/\s+/g,' ').match(/[^.!?…]+[.!?…]*["“”]?\s*/g)||[it.text]; const cs=[]; let cur='';
     for(const p of parts){ if(cur&&(cur+p).length>230){ cs.push(cur.trim()); cur=p; } else cur+=p; } if(cur.trim()) cs.push(cur.trim());
     cs.forEach((c,i)=>{ const u=new SpeechSynthesisUtterance(c); u.lang='de-DE'; if(this.voice) u.voice=this.voice; u.rate=state.settings.rate||1;
       if(i===cs.length-1) u.onend=u.onerror=()=>{ if(this.playing===it) this._done(); };

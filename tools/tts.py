@@ -21,8 +21,10 @@ GEMINI_BUDGET_S = 25 * 60          # höchstens 25 Minuten pro Lauf
 
 STYLE_STORY = ("Lies den folgenden Text auf Deutsch vor wie eine begeisterte, warmherzige Stadtführerin in Augsburg: "
                "lebendig und natürlich, mit kleinen Pausen vor Pointen und Funfacts, ein Lächeln in der Stimme, "
-               "aber nicht übertrieben. Lies nur den Text, ohne etwas hinzuzufügen.\n\nText:\n")
-STYLE_SHORT = "Sag freundlich, klar und natürlich auf Deutsch:\n"
+               "aber nicht übertrieben. Sprich durchgehend mit deutscher Aussprache, auch Namen, lateinische "
+               "Begriffe und Fremdwörter so, wie ein deutscher Muttersprachler sie sagt. "
+               "Lies nur den Text, ohne etwas hinzuzufügen.\n\nText:\n")
+STYLE_SHORT = "Sag freundlich, klar und natürlich auf Deutsch, mit deutscher Aussprache:\n"
 
 def priority(key):
     for i, p in enumerate(["intro", "story:", "way:", "zone:", "first:", "next:", "home", "end", "test", "turn:"]):
