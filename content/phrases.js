@@ -38,6 +38,8 @@ globalThis.PHRASES = {
       .replace(/\s&\s/g,' und ')
       .replace(/\bH2\b/g,'H zwei')
       .replace(/\bz\.\s?B\./g,'zum Beispiel')
+      .replace(/(\d{1,3})\.(\d{3})(?!\d)/g,'$1$2')                                   // 20.000 → 20000
+      .replace(/(\d+),(\d+)/g,(m,a,b)=>num(+a)+' Komma '+b.split('').map(x=>ONES[+x]).join(' '))   // 98,5 → achtundneunzig Komma fünf
       .replace(new RegExp('(\\d+)\\.(?=\\s+(?:'+ORD_NEXT+')\\b)','g'),(m,d)=>ord(+d))
       .replace(/(\d{4})er\b/g,(m,d)=>num(+d)+'er')
       .replace(/\d+/g,d=>num(+d))

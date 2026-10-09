@@ -956,9 +956,13 @@ async function selectCity(id){
   if(state.nav) return;
   const entry=cityEntry(id)||CITIES[0];
   try{ CITY=await loadCityData(entry); }catch(e){ notice('Die Stadt konnte nicht geladen werden. Bitte Internetverbindung prüfen.'); return; }
-  const s=state.settings; s.cityId=entry.id;
+  const s=state.settings;
+  s.themesByCity=s.themesByCity||{};
+  if(s.cityId && s.cityId!==entry.id) s.themesByCity[s.cityId]=s.themes;      // Themenauswahl pro Stadt merken
   const valid=CITY.themes.map(t=>t.id);
-  s.themes=s.themes.filter(t=>valid.includes(t)); if(!s.themes.length) s.themes=valid.slice(0,3);
+  const remembered=s.themesByCity[entry.id] || (s.cityId===entry.id? s.themes : null);
+  s.themes=(remembered||valid.slice(0,3)).filter(t=>valid.includes(t)); if(!s.themes.length) s.themes=valid.slice(0,3);
+  s.cityId=entry.id;
   if(!['me','pick',...CITY.starts.map(x=>x.id)].includes(s.startKind)) s.startKind=CITY.starts[0].id;
   saveSettings();
   state.tour=null; state.legs=null; state.pickLL=null; state.simPos=null; clearStopMarkers(); drawRoute();
