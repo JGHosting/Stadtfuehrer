@@ -621,9 +621,9 @@ const Speech = {
     if(this.playing.src) this.el.pause(); else if(this.ok) speechSynthesis.pause(); updatePlayer(); },
   resume(){ if(!this.paused) return; this.paused=false;
     if(this.playing&&this.playing.src){ const pr=this.el.play(); if(pr) pr.catch(()=>{}); } else if(this.ok) speechSynthesis.resume(); updatePlayer(); },
-  skip(){ const it=this.playing; if(!it) return; this.paused=false; this.playing=null;
-    try{ this.el.pause(); }catch(e){} if(this.ok) speechSynthesis.cancel();
-    if(it.onend) it.onend(); this._next(); },
+  /* Überspringen beendet nur die aktuelle Ansage. Wartende Ansagen werden verworfen –
+     die nächste Geschichte kommt erst, wenn man wirklich an etwas vorbeiläuft. */
+  skip(){ const it=this.playing; if(!it) return; const cb=it.onend; this.stop(); if(cb) cb(); },
   setRate(r){ state.settings.rate=r; saveSettings(); this.el.playbackRate=r; updatePlayer(); },
   /* say(text, {key, tag, interrupt, onend}) – key verweist auf eine KI-Audiodatei */
   say(text,{key=null,tag='misc',interrupt=true,onend,title='',ref=null}={}){
