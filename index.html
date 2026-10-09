@@ -157,6 +157,23 @@ details[open].settings summary::after{content:" ▴"}
 .box-fact{background:var(--pine-soft)}
 .box-fact .eyebrow{color:var(--pine)}
 .box-look{border:1.5px dashed var(--line)}
+.story{transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.story.dragging{transition:none}
+.story-grip{position:sticky;top:0;z-index:3;height:0;display:flex;justify-content:center}
+.story-grip i{display:block;width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(0,0,0,.35);margin-top:8px}
+.story-min{position:fixed;z-index:21;top:calc(var(--safe-t) + 12px);left:12px;height:40px;border-radius:20px;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-weight:600;padding:0 14px;display:flex;align-items:center;gap:6px}
+.player{position:fixed;z-index:11;left:12px;right:12px;max-width:540px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 26px rgba(0,0,0,.2);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.player-top{display:flex;align-items:center;gap:8px;min-width:0;border:0;background:none;padding:0;text-align:left}
+.player-top .eq{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none}
+.player.paused .player-top .eq{background:var(--muted)}
+.player-top b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.player-top span{font-size:12px;color:var(--muted);white-space:nowrap}
+.player-row{display:flex;gap:8px;align-items:center}
+.pbtn{width:44px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;flex:none}
+.pbtn svg{width:20px;height:20px}
+.pbtn.wide{width:auto;padding:0 12px;font-weight:700;font-size:14px;gap:6px;display:flex;align-items:center}
+.player .seg{flex:1;min-width:0}
+.player .seg button{padding:7px 0;font-size:13px;font-variant-numeric:tabular-nums}
 .story-close{position:fixed;z-index:21;top:calc(var(--safe-t) + 12px);right:12px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;display:grid;place-items:center}
 .story-bar{position:fixed;z-index:21;left:0;right:0;bottom:0;padding:12px 16px calc(12px + var(--safe-b));background:var(--surface);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:center}
 .story-bar .btn{flex:1;max-width:300px}
@@ -192,6 +209,17 @@ details[open].settings summary::after{content:" ▴"}
   <button id="toastClose" type="button">Ausblenden</button>
 </div>
 <div id="notice" class="notice" hidden role="status"></div>
+
+<div id="player" class="player" hidden aria-label="Audio-Wiedergabe">
+  <button class="player-top" id="playerOpen" type="button"><i class="eq"></i><b id="playerTitle">–</b><span id="playerState">läuft</span></button>
+  <div class="player-row">
+    <button class="pbtn" id="playerPause" type="button" aria-label="Pause"></button>
+    <div class="seg" id="playerSpeed">
+      <button type="button" data-v="1">1×</button><button type="button" data-v="1.25">1,25×</button><button type="button" data-v="1.5">1,5×</button><button type="button" data-v="2">2×</button>
+    </div>
+    <button class="pbtn wide" id="playerSkip" type="button">Weiter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l8 7-8 7zM16 5v14"/></svg></button>
+  </div>
+</div>
 
 <button id="locateBtn" class="locate" type="button" aria-label="Meinen Standort zeigen">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
@@ -246,6 +274,7 @@ details[open].settings summary::after{content:" ▴"}
       <div class="settings-body">
         <div class="field"><span class="label">Stimme</span>
           <div class="seg" id="segVoice">
+            <button type="button" data-v="gemini">Gemini</button>
             <button type="button" data-v="seraphina">Seraphina</button>
             <button type="button" data-v="florian">Florian</button>
             <button type="button" data-v="device">Gerät</button>
@@ -253,9 +282,7 @@ details[open].settings summary::after{content:" ▴"}
         </div>
         <label class="toggle"><span>Geschichten bei Ankunft vorlesen</span><input type="checkbox" id="optAutoplay"></label>
         <label class="toggle"><span>Erzählungen am Wegesrand</span><input type="checkbox" id="optWayside"></label>
-        <label class="toggle"><span>Abbiegehinweise ansagen</span><input type="checkbox" id="optTurns"></label>
-        <div class="field"><div class="time-row"><span class="label">Sprechtempo</span><span class="label" id="rateVal">1,0×</span></div>
-        <input type="range" id="optRate" min="0.8" max="1.3" step="0.05" aria-label="Sprechtempo"></div>
+        <label class="toggle"><span>Abbiegehinweise ansagen<small>Standardmäßig aus. Die Pfeile oben zeigen dir immer den Weg.</small></span><input type="checkbox" id="optTurns"></label>
         <button class="btn btn-secondary" id="testVoice" type="button">Stimme testen</button>
       </div>
     </details>
@@ -325,7 +352,9 @@ details[open].settings summary::after{content:" ▴"}
 </section>
 
 <section id="story" class="story" hidden aria-modal="true" role="dialog" aria-labelledby="storyTitle">
+  <button class="story-min" id="storyMinBtn" type="button" aria-label="Zur Karte">⌄ Karte</button>
   <button class="story-close" id="storyClose" type="button" aria-label="Schließen">✕</button>
+  <div class="story-grip" aria-hidden="true"><i></i></div>
   <div class="story-inner">
     <img id="storyImg" class="story-img" alt="" hidden>
     <div class="story-cap" id="storyCap" hidden>Bild: Wikimedia Commons über Wikipedia</div>
@@ -377,9 +406,12 @@ function notice(msg,ms=4500){ const n=$('#notice'); n.textContent=msg; n.hidden=
    Zustand & Einstellungen
    ===================================================================== */
 const DEFAULTS = {startKind:'rathaus', mode:'walk', minutes:120, themes:['geschichte','fugger','wasser'], loop:true,
-                  autoplay:true, wayside:true, turns:true, rate:1, audio:true, sim:false, simSpeed:'5', voice:'seraphina'};
+                  autoplay:true, wayside:true, turns:false, rate:1, audio:true, sim:false, simSpeed:'5', voice:'gemini', v:2};
 const state = {
-  settings: Object.assign({}, DEFAULTS, store.get('settings', {})),
+  settings: (()=>{ const st=Object.assign({}, DEFAULTS, store.get('settings', {}));
+    if(!(st.v>=2)){ st.turns=false; st.voice='gemini'; st.v=2; }
+    if(![1,1.25,1.5,2].includes(+st.rate)) st.rate=1;
+    return st; })(),
   start:null, pickLL:null, pos:null, tour:null, legs:null, nav:null, sim:null, watchId:null, wake:null, storyCtx:null
 };
 const saveSettings = () => store.set('settings', state.settings);
@@ -581,20 +613,28 @@ const Speech = {
     try{ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); }catch(e){}
   },
   srcFor(key){
-    const v=state.settings.voice; if(!key||v==='device'||!this.manifest) return null;
-    const f=this.manifest.voices&&this.manifest.voices[v]&&this.manifest.voices[v][key];
-    return f? 'audio/'+f : null;
+    const v=state.settings.voice; if(!key||v==='device'||!this.manifest||!this.manifest.voices) return null;
+    for(const vid of [v,'seraphina']){ const f=this.manifest.voices[vid]&&this.manifest.voices[vid][key]; if(f) return 'audio/'+f; }
+    return null;
   },
+  pause(){ if(!this.playing||this.paused) return; this.paused=true;
+    if(this.playing.src) this.el.pause(); else if(this.ok) speechSynthesis.pause(); updatePlayer(); },
+  resume(){ if(!this.paused) return; this.paused=false;
+    if(this.playing&&this.playing.src){ const pr=this.el.play(); if(pr) pr.catch(()=>{}); } else if(this.ok) speechSynthesis.resume(); updatePlayer(); },
+  skip(){ const it=this.playing; if(!it) return; this.paused=false; this.playing=null;
+    try{ this.el.pause(); }catch(e){} if(this.ok) speechSynthesis.cancel();
+    if(it.onend) it.onend(); this._next(); },
+  setRate(r){ state.settings.rate=r; saveSettings(); this.el.playbackRate=r; updatePlayer(); },
   /* say(text, {key, tag, interrupt, onend}) – key verweist auf eine KI-Audiodatei */
-  say(text,{key=null,tag='misc',interrupt=true,onend}={}){
+  say(text,{key=null,tag='misc',interrupt=true,onend,title='',ref=null}={}){
     if(!state.settings.audio){ onend&&onend(); return; }
     if(interrupt) this.stop(true);
-    this.queue.push({text,src:this.srcFor(key),tag,onend});
+    this.queue.push({text,src:this.srcFor(key),tag,onend,title,ref});
     if(!this.playing) this._next();
     updatePlayBtn();
   },
   _next(){
-    const it=this.queue.shift(); this.playing=it||null;
+    const it=this.queue.shift(); this.playing=it||null; this.paused=false;
     if(!it){ this.tag=null; updatePlayBtn(); return; }
     this.tag=it.tag;
     if(it.src){
@@ -614,7 +654,7 @@ const Speech = {
   _done(){ const it=this.playing; this.playing=null; if(it&&it.onend) it.onend(); this._next(); },
   busy(){ return !!this.playing || this.queue.length>0; },
   stop(silent){
-    this.queue=[]; const it=this.playing; this.playing=null; this.tag=null;
+    this.queue=[]; const it=this.playing; this.playing=null; this.tag=null; this.paused=false;
     try{ this.el.pause(); }catch(e){}
     if(this.ok) speechSynthesis.cancel();
     if(!silent) updatePlayBtn();
@@ -693,7 +733,9 @@ function fitTour(){
    ===================================================================== */
 function showView(id){ ['viewPlan','viewPreview','viewNav','viewDone'].forEach(v=>$('#'+v).hidden=(v!==id)); $('#sheet').scrollTop=0; setSheet(false); }
 function visibleSheet(){ const sh=$('#sheet'); return sh.offsetHeight - (sheetCollapsed? collapseOffset():0); }
-function positionLocate(){ requestAnimationFrame(()=>{ $('#locateBtn').style.bottom=(visibleSheet()+12)+'px'; }); }
+function positionLocate(){ requestAnimationFrame(()=>{ const base=visibleSheet()+12, pl=$('#player');
+  if(pl) pl.style.bottom=base+'px';
+  $('#locateBtn').style.bottom=(pl&&!pl.hidden? base+pl.offsetHeight+10 : base)+'px'; }); }
 
 /* ---------- Wischbares Menü ---------- */
 let sheetCollapsed=false;
@@ -761,8 +803,6 @@ function initPlanUI(){
   ck('#loopToggle','loop');
   const st=$('#simToggle'); st.checked=!!state.settings.sim;
   st.onchange=()=>setSimMode(st.checked,true); ck('#optAutoplay','autoplay'); ck('#optWayside','wayside'); ck('#optTurns','turns');
-  const rate=$('#optRate'); rate.value=state.settings.rate; $('#rateVal').textContent=(+rate.value).toFixed(2).replace('.',',')+'×';
-  rate.oninput=()=>{ state.settings.rate=+rate.value; $('#rateVal').textContent=(+rate.value).toFixed(2).replace('.',',')+'×'; saveSettings(); };
   $('#testVoice').onclick=()=>{ Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); };
   bindSeg('#segVoice','voice',()=>{ Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); });
   $('#startHint').hidden=state.settings.startKind!=='pick';
@@ -877,8 +917,8 @@ async function startTour(simulate){
   requestWake();
   const first=state.legs[0].target;
   Speech.unlock();
-  Speech.say(PHRASES.intro(CITY),{key:'intro',tag:'intro'});
-  if(first.stop) Speech.say(PHRASES.first(first.stop),{key:'first:'+first.stop.id,tag:'intro',interrupt:false});
+  Speech.say(PHRASES.intro(CITY),{key:'intro',tag:'intro',title:'Willkommen in '+CITY.name});
+  if(first.stop) Speech.say(PHRASES.first(first.stop),{key:'first:'+first.stop.id,tag:'intro',interrupt:false,title:'Willkommen in '+CITY.name});
   if(simulate){
     state.sim={dist:0, paused:false, last:performance.now(), timer:setInterval(simTick,200)};
     syncSimBar();
@@ -911,7 +951,7 @@ function onPosition(ll,acc){
   if(next && state.settings.turns && next.maneuver.type!=='arrive'){
     const key=nav.legIdx+'-'+(nav.stepIdx+1), dn=dist(ll,llOfStep(next));
     if(dn<40 && !nav.announced.has(key)){ nav.announced.add(key); const mk=/roundabout|rotary/.test(next.maneuver.type)?'roundabout':next.maneuver.modifier; const phrase=PHRASES.turns[mk];
-      if(phrase && !Speech.busy()) Speech.say(phrase,{key:'turn:'+mk,tag:'turn',interrupt:false}); }
+      if(phrase && state.settings.turns && !Speech.busy()) Speech.say(phrase,{key:'turn:'+mk,tag:'turn',interrupt:false,title:'Navigation'}); }
   }
   // Ankunft
   const legEnd=leg.pts[leg.pts.length-1];
@@ -931,7 +971,7 @@ function checkWayside(ll){
   const pool=[...CITY.wayside, ...CITY.stops.filter(s=>!inTour.has(s.id))];
   for(const w of pool){
     if(nav.told.has(w.id)) continue;
-    if(dist(ll,w.ll)<45){ nav.told.add(w.id); tellWayside(w.name, PHRASES.way(w), 'Am Wegesrand', 'way:'+w.id); return; }
+    if(dist(ll,w.ll)<45){ nav.told.add(w.id); tellWayside(w.name, PHRASES.way(w), 'Am Wegesrand', 'way:'+w.id, w); return; }
   }
   for(const z of CITY.zones){
     if(nav.zones.has(z.id)) continue;
@@ -939,12 +979,12 @@ function checkWayside(ll){
   }
 }
 let toastTimer;
-function tellWayside(title,text,eyebrow,key){
+function tellWayside(title,text,eyebrow,key,ref){
   $('#toastEyebrow').textContent=eyebrow; $('#toastTitle').textContent=title; $('#toastTitle').hidden=!title; $('#toastText').textContent=text; $('#toast').hidden=false;
   clearTimeout(toastTimer);
   const hide=()=>{ toastTimer=setTimeout(()=>$('#toast').hidden=true,5000); };
   const storyPlaying=Speech.busy() && Speech.tag && Speech.tag.startsWith('story');
-  if(state.settings.audio && !storyPlaying){ Speech.say(text,{key,tag:'way',interrupt:false,onend:hide}); } else toastTimer=setTimeout(()=>$('#toast').hidden=true,20000);
+  if(state.settings.audio && !storyPlaying){ Speech.say(text,{key,tag:'way',interrupt:false,onend:hide,title:title||eyebrow,ref}); } else toastTimer=setTimeout(()=>$('#toast').hidden=true,20000);
 }
 
 function legRemaining(ll){
@@ -986,7 +1026,7 @@ function arrive(){
   drawStopMarkers();
   if('vibrate' in navigator) navigator.vibrate(120);
   openStory(st,{mode:'arrival'});
-  if(state.settings.autoplay) Speech.say(PHRASES.story(st),{key:'story:'+st.id,tag:'story:'+st.id});
+  if(state.settings.autoplay) Speech.say(PHRASES.story(st),{key:'story:'+st.id,tag:'story:'+st.id,title:st.name,ref:st});
 }
 function advance(){
   const nav=state.nav;
@@ -995,8 +1035,8 @@ function advance(){
   if(nav.legIdx>=state.legs.length){ finishTour(); return; }
   const leg=state.legs[nav.legIdx];
   drawRoute(); drawStopMarkers(); updateNavUI();
-  if(leg.target.home) Speech.say(PHRASES.home(),{key:'home',tag:'nav'});
-  else Speech.say(PHRASES.next(leg.target.stop),{key:'next:'+leg.target.stop.id,tag:'nav'});
+  if(leg.target.home) Speech.say(PHRASES.home(),{key:'home',tag:'nav',title:'Zurück zum Start'});
+  else Speech.say(PHRASES.next(leg.target.stop),{key:'next:'+leg.target.stop.id,tag:'nav',title:'Weiter zu '+leg.target.name});
 }
 async function reroute(){
   const nav=state.nav; if(!nav||!state.pos) return;
@@ -1016,7 +1056,7 @@ function finishTour(){
   $('#doneStats').innerHTML=`<div class="stat"><b>${nav.visited.length}</b><span>Stationen</span></div><div class="stat"><b>${fmtDist(nav.walked)}</b><span>Unterwegs</span></div><div class="stat"><b>${fmtMin(Math.max(1,mins))}</b><span>Zeit</span></div>`;
   $('#banner').hidden=true; $('#toast').hidden=true;
   showView('viewDone');
-  Speech.say(PHRASES.end(CITY),{key:'end',tag:'end'});
+  Speech.say(PHRASES.end(CITY),{key:'end',tag:'end',title:'Tour beendet'});
   state.nav=null; drawRoute(); drawStopMarkers();
 }
 function stopTracking(){
@@ -1066,25 +1106,85 @@ function openStory(s,{mode}){
     const nl=state.legs[state.nav.legIdx+1];
     nx.textContent= nl? (nl.target.home? 'Zurück zum Start' : 'Weiter zu: '+nl.target.name) : 'Tour beenden';
   } else nx.textContent='Schließen';
-  $('#story').hidden=false; $('#story').scrollTop=0;
+  state.storyMin=false;
+  const el=$('#story'); el.style.transform=''; el.hidden=false; el.scrollTop=0;
   updatePlayBtn();
 }
 function closeStory(){
-  const ctx=state.storyCtx; state.storyCtx=null; $('#story').hidden=true;
+  const ctx=state.storyCtx; state.storyCtx=null; state.storyMin=false; $('#story').hidden=true;
   if(ctx&&ctx.mode==='arrival'){ Speech.stop(); advance(); }
+  updatePlayer();
+}
+/* Nach unten wischen: Geschichte einklappen, Audio läuft weiter, Karte ist sichtbar */
+function minimizeStory(){
+  const ctx=state.storyCtx, el=$('#story');
+  el.style.transform='translateY(100%)';
+  setTimeout(()=>{ el.hidden=true; el.style.transform=''; updatePlayer(); },280);
+  if(ctx&&ctx.mode==='arrival') state.storyMin=true; else state.storyCtx=null;
+  updatePlayer();
+}
+function restoreStory(){
+  if(state.storyMin&&state.storyCtx){ state.storyMin=false; const el=$('#story'); el.style.transform=''; el.hidden=false; updatePlayer(); return; }
+  const it=Speech.playing; if(it&&it.ref) openStory(it.ref,{mode:it.ref.story?'preview':'wayside'});
 }
 function updatePlayBtn(){
-  const ctx=state.storyCtx; if(!ctx) return;
-  const playing=Speech.tag==='story:'+ctx.s.id && Speech.busy();
-  $('#storyPlay').textContent=playing? '❚❚ Stopp' : '▶ Anhören';
+  const ctx=state.storyCtx;
+  if(ctx){ const playing=Speech.tag==='story:'+ctx.s.id && Speech.busy();
+    $('#storyPlay').textContent=playing&&!Speech.paused? '❚❚ Pause' : (playing? '▶ Weiter' : '▶ Anhören'); }
+  updatePlayer();
 }
+const ICON_PAUSE='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg>';
+function updatePlayer(){
+  const pl=$('#player'); if(!pl) return;
+  const storyOpen=!$('#story').hidden;
+  const arrivalMin=state.storyMin&&state.storyCtx&&state.storyCtx.mode==='arrival';
+  const it=Speech.playing;
+  const show=!storyOpen && (!!it || arrivalMin);
+  pl.hidden=!show; if(!show){ positionLocate(); return; }
+  pl.classList.toggle('paused',!!Speech.paused||!it);
+  $('#playerTitle').textContent= it? (it.title||'Audio') : state.storyCtx.s.name;
+  $('#playerState').textContent= !it? 'bereit' : Speech.paused? 'pausiert' : 'läuft';
+  $('#playerPause').innerHTML= (it&&!Speech.paused)? ICON_PAUSE : ICON_PLAY;
+  $('#playerPause').setAttribute('aria-label',(it&&!Speech.paused)?'Pause':'Abspielen');
+  $('#playerSpeed').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===+state.settings.rate)));
+  const nl=arrivalMin&&state.nav? state.legs[state.nav.legIdx+1] : null;
+  $('#playerSkip').firstChild.textContent= arrivalMin? (nl? 'Weiter ' : 'Ende ') : 'Überspringen ';
+  positionLocate();
+}
+$('#playerPause').onclick=()=>{
+  const it=Speech.playing;
+  if(!it){ const ctx=state.storyCtx; if(ctx){ Speech.say(PHRASES.story(ctx.s),{key:'story:'+ctx.s.id,tag:'story:'+ctx.s.id,title:ctx.s.name,ref:ctx.s}); } return; }
+  Speech.paused? Speech.resume() : Speech.pause();
+};
+$('#playerSpeed').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) Speech.setRate(+b.dataset.v); });
+$('#playerSkip').onclick=()=>{
+  if(state.storyCtx&&state.storyCtx.mode==='arrival'){ closeStory(); return; }
+  Speech.skip();
+};
+$('#playerOpen').onclick=restoreStory;
+$('#storyMinBtn').onclick=minimizeStory;
+(function initStorySwipe(){
+  const el=$('#story'); let g=null;
+  el.addEventListener('touchstart',e=>{ if(e.touches.length!==1){ g=null; return; } g={y0:e.touches[0].clientY,y:e.touches[0].clientY,t:performance.now(),top:el.scrollTop<=0,decided:false,drag:false}; },{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(!g) return; const y=e.touches[0].clientY, dy=y-g.y0; g.y=y;
+    if(!g.decided){ if(dy===0) return; g.decided=true; g.drag=dy>0&&g.top&&el.scrollTop<=0; if(!g.drag){ g=null; return; } el.classList.add('dragging'); g.y0=y; }
+    if(e.cancelable) e.preventDefault();
+    el.style.transform=`translateY(${Math.max(0,y-g.y0)}px)`;
+  },{passive:false});
+  const end=()=>{ if(!g) return; const st=g; g=null; if(!st.drag) return; el.classList.remove('dragging');
+    const dy=st.y-st.y0, v=dy/Math.max(1,performance.now()-st.t);
+    if(dy>110||v>0.5) minimizeStory(); else el.style.transform=''; };
+  el.addEventListener('touchend',end); el.addEventListener('touchcancel',end);
+})();
 $('#storyPlay').onclick=()=>{
   const ctx=state.storyCtx; if(!ctx) return;
-  if(Speech.tag==='story:'+ctx.s.id && Speech.busy()){ Speech.stop(); return; }
+  if(Speech.tag==='story:'+ctx.s.id && Speech.busy()){ Speech.paused? Speech.resume() : Speech.pause(); updatePlayBtn(); return; }
   if(!state.settings.audio){ state.settings.audio=true; saveSettings(); updateAudioBtn(); }
   Speech.unlock();
-  if(ctx.s.story) Speech.say(PHRASES.story(ctx.s),{key:'story:'+ctx.s.id,tag:'story:'+ctx.s.id});
-  else Speech.say(PHRASES.way(ctx.s),{key:'way:'+ctx.s.id,tag:'story:'+ctx.s.id});
+  if(ctx.s.story) Speech.say(PHRASES.story(ctx.s),{key:'story:'+ctx.s.id,tag:'story:'+ctx.s.id,title:ctx.s.name,ref:ctx.s});
+  else Speech.say(PHRASES.way(ctx.s),{key:'way:'+ctx.s.id,tag:'story:'+ctx.s.id,title:ctx.s.name,ref:ctx.s});
 };
 $('#storyNext').onclick=closeStory;
 $('#storyClose').onclick=closeStory;
