@@ -279,6 +279,7 @@ details[open].settings summary::after{content:" ▴"}
             <button type="button" data-v="florian">Florian</button>
             <button type="button" data-v="device">Gerät</button>
           </div>
+          <p class="hint" id="voiceStatus"></p>
         </div>
         <label class="toggle"><span>Geschichten bei Ankunft vorlesen</span><input type="checkbox" id="optAutoplay"></label>
         <label class="toggle"><span>Erzählungen am Wegesrand</span><input type="checkbox" id="optWayside"></label>
@@ -599,7 +600,7 @@ const Speech = {
     this.el.preload='auto';
     this.el.addEventListener('ended',()=>this._done());
     this.el.addEventListener('error',()=>{ const it=this.playing; if(it&&it.src){ it.src=null; this._device(it); } });
-    fetch('audio/manifest.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(m=>{ this.manifest=m; }).catch(()=>{});
+    fetch('audio/manifest.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(m=>{ this.manifest=m; showVoiceStatus(); }).catch(()=>{});
     if(this.ok){
       const pick=()=>{ const vs=speechSynthesis.getVoices().filter(v=>/^de/i.test(v.lang));
         this.voice=vs.find(v=>/premium|enhanced|neural|natural|online/i.test(v.name))||vs.find(v=>/anna|petra|helena|katja/i.test(v.name))||vs[0]||null; };
@@ -662,6 +663,14 @@ const Speech = {
 };
 Speech.init();
 
+function showVoiceStatus(){
+  const m=Speech.manifest, el=$('#voiceStatus'); if(!el) return;
+  if(!m||!m.voices){ el.textContent='KI-Audios noch nicht verfügbar – es spricht die Gerätestimme.'; return; }
+  const total=Object.keys(m.voices.seraphina||{}).length, g=Object.keys(m.voices.gemini||{}).length;
+  el.textContent= !g? 'Gemini-Audios werden noch erzeugt. Bis dahin spricht Seraphina.'
+    : g<total? `Gemini: ${g} von ${total} Texten fertig. Der Rest wird automatisch nachproduziert, bis dahin springt Seraphina ein.`
+    : `Gemini: alle ${total} Texte fertig.`;
+}
 /* =====================================================================
    Karte
    ===================================================================== */
