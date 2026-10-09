@@ -1,0 +1,73 @@
+# Faktencheck Augsburg (Oktober 2026)
+
+Alle Geschichten, Funfacts, Unterwegs- und Viertel-Texte wurden gegen Quellen geprüft (u. a. Wikipedia, wassersystem-augsburg.de, augsburg-tourismus.de, Kunstsammlungen und Museen Augsburg, fugger.de, bpb.de). Nicht belegbare Aussagen wurden entfernt oder entschärft.
+
+## Änderungen
+- Rathaus: Goldener Saal – Rekonstruktion 1996 abgeschlossen (statt „1985 wieder zugänglich“)
+- Rathaus-Funfact: Gründung präziser (15 v. Chr. ist das gefeierte Gründungsjahr, die Stadt entstand in den Jahrzehnten danach)
+- Perlachturm: Ursprung 10. Jh. und Aufstockung 1614–1616 ergänzt
+- Perlachturm: genaue Stufenzahl 258
+- Augustusbrunnen: Anlass „1600. Geburtstag“ entfernt (nicht belegt, rechnerisch auch nicht passend)
+- Augustusbrunnen: Zuordnung Männer = Flüsse / Frauen = Bäche nicht belegt, entschärft
+- Augustusbrunnen: Schau-mal-Tipp angepasst
+- Fuggerei: Baubeginn 1516, Stiftungsbrief 1521
+- Fuggerei: Gebete konkretisiert, Gemeinschaftsdienst ergänzt; Nachtwächter-Gebühr entfernt (nicht belegt)
+- Fuggerei: Zahl der Häuser/Wohnungen ergänzt, Bunker-Ausstellung präzisiert
+- Fuggerei: Franz Mozart – Wohnzeit statt unbelegter Gassenangabe
+- Fuggerhäuser: Renaissance-Aussage an Quelle angepasst
+- St. Anna: Fuggerkapelle – „erster sakraler Renaissancebau“, Brüder genannt, Himmelsrichtung entfernt
+- St. Anna: Lutherstiege-Museum (seit 1983, Eintritt frei)
+- St. Anna: neuer Schau-mal-Tipp (Cranach-Porträt)
+- Schaezlerpalais: Bauherr vollständig, Bauzeit 1765–1770
+- Schaezlerpalais: Marie Antoinette tanzte bei der Einweihung
+- Schaezlerpalais: Barockgalerie seit 1970
+- Herkulesbrunnen: Aufstellung 1602 am Weinmarkt, Details zur Figur
+- Herkulesbrunnen: Anzahl der Najaden entfernt
+- Herkulesbrunnen: Schau-mal-Tipp
+- St. Ulrich: evangelische Kirche 1709/10, Bezug zum Religionsfrieden präzisiert
+- St. Ulrich: Friedensfest-Hintergrund ergänzt
+- Fronhof: Confessio Augustana – Vorleser Christian Beyer, Ort Kapelle, Verfasser Melanchthon (statt „Fürsten verlasen“)
+- Fronhof: Schau-mal-Tipp Gedenktafel
+- Brechthaus: Hausgeschichte mit Hammerwerk ergänzt
+- Puppenkiste: Eröffnungsdatum
+- Puppenkiste: erste TV-Sendung 1953 ergänzt; „Meer aus Plastikfolie“ entfernt (nicht belegt)
+- Puppenkiste: Teaser angepasst
+- Puppenkiste: Heilig-Geist-Spital als Holls letztes großes Werk
+- Wassertürme: Baubeginn 1416, 463 Jahre Betrieb; unbelegte Besucher-Aussage entfernt
+- Rotes Tor: Umbau 1622 präzisiert
+- Stadtmetzg: Bauzeit 1606–1609
+- Lechviertel: Funfact ergänzt (über 1000 Jahre Wasserkraft)
+- Synagoge: Architekten, Einweihung 1917, Kuppelhöhe
+- Synagoge: Tankstelle → Tanklager, Ablauf an Quelle angepasst
+- Synagoge: Wiedereinweihung 1985
+- Synagoge: unbelegte Jahrhundert-Angabe ersetzt
+- Zeughaus: Umbau aus Kornhaus 1602–1607
+- Maximilianmuseum: Glasdach präzisiert
+- Maximilianmuseum: Goldschmiede-Aussage an Quelle angepasst
+- Maximilianmuseum: Funfact Modellkammer von Elias Holl
+- Vogeltor: unbelegte Datierung entfernt
+- Lueginsland: Baugeschichte 1430/1532 ergänzt
+- Lueginsland: Grünanlage seit 1915, Hexenbrunnen
+- Eiskanal: Formulierung
+- Eiskanal: Bezug zum Wasserwerk
+- Eiskanal: unbelegte Namensherkunft ersetzt
+- Hochablass: 1912 und über 750 Jahre
+- tim: Eröffnung 2010, Kammgarnspinnerei 1836–2004
+- tim: Funfact Stoffmuster-Sammlung
+- Glaspalast: Fertigstellung 1910, Architekt Manz
+- Glaspalast: H2 seit 2006
+- Botanischer Garten: unbelegtes Teehaus entfernt
+- Merkurbrunnen: Amor-Detail ergänzt
+- St. Moritz: Jahr 2013
+- Holbeinhaus: Kauf 1496, Geburtshaus Holbeins d. J.
+- Weberhaus: Herkunft Graben und „Fucker advenit“
+- Römische Mauer: Baujahr 1954 und Grabmal ergänzt
+- Hauptbahnhof: Aussage an Quelle angepasst
+- Fugger-Welser-Museum: Venezuela als Kreditsicherheit, 1528–1546
+- Gignoux-Haus: auf belegte Aussagen zu Anna Barbara Gignoux umgestellt
+- Wertachbrucker Tor: 1605 um zwei Stockwerke erhöht
+- Maximilianstraße: Weinmarkt ergänzt
+- Domviertel: Hochterrasse
+## Noch von dir zu prüfen (vor Ort)
+- Hinweise in „Schau mal genau hin“ (z. B. Gedenktafeln, Tore) – ob man sie vom Weg aus wirklich sieht
+- Öffnungszeiten/Eintritt ändern sich – die Texte nennen deshalb keine Zeiten
