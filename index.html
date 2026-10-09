@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Stadtführer Augsburg</title>
+<title>Stadtführer</title>
 <meta name="theme-color" content="#2E5E4B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -139,6 +139,15 @@ details[open].settings summary::after{content:" ▴"}
 .navmini .d b{display:block;font-family:var(--f-read);font-size:20px}
 .navmini .d span{font-size:13px;color:var(--muted)}
 .navmini .up{width:22px;height:22px;color:var(--muted);flex:none}
+.citybtn{border:0;background:none;padding:2px 0;display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.citybtn .caret{font-size:12px}
+.citylist{display:flex;flex-direction:column;margin-top:10px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.citylist button{border:0;border-top:1px solid var(--line);background:var(--surface);padding:12px 14px;display:flex;justify-content:space-between;gap:10px;text-align:left}
+.citylist button:first-child{border-top:0}
+.citylist button[aria-current="true"]{background:var(--pine-soft)}
+.citylist b{font-size:16px}
+.citylist span{font-size:13px;color:var(--muted)}
+.citylist .more{padding:10px 14px;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
 .banner .ic{width:44px;height:44px;display:grid;place-items:center}
 .banner .ic svg{width:40px;height:40px;transition:transform .3s}
 .ban-main{font-weight:700;font-size:18px;line-height:1.2}
@@ -242,18 +251,14 @@ details[open].settings summary::after{content:" ▴"}
   <!-- PLAN -->
   <div id="viewPlan" class="view">
     <div>
-      <div class="eyebrow">Augsburg · gegründet 15 v. Chr.</div>
-      <h1>Deine Stadtführung</h1>
+      <button class="citybtn" id="cityBtn" type="button" aria-expanded="false"><span class="eyebrow"><span id="cityName">–</span> · <span id="cityTagline"></span></span><span class="caret" aria-hidden="true">▾</span></button>
+      <h1 id="planTitle">Deine Stadtführung</h1>
+      <div class="citylist" id="cityList" hidden></div>
     </div>
 
     <div class="field">
       <span class="label">Startpunkt</span>
-      <div class="seg seg-grid" id="segStart">
-        <button type="button" data-v="me">Mein Standort</button>
-        <button type="button" data-v="rathaus">Rathausplatz</button>
-        <button type="button" data-v="hbf">Hauptbahnhof</button>
-        <button type="button" data-v="pick">Auf Karte</button>
-      </div>
+      <div class="seg seg-grid" id="segStart"></div>
       <p class="hint" id="startHint" hidden>Tippe auf die Karte, um deinen Startpunkt zu setzen.</p>
     </div>
 
@@ -276,7 +281,7 @@ details[open].settings summary::after{content:" ▴"}
     </div>
 
     <label class="toggle"><span>Rundtour, zurück zum Startpunkt</span><input type="checkbox" id="loopToggle"></label>
-    <label class="toggle"><span>Simulationsmodus<small>Zum Testen ohne in Augsburg zu sein. Deine Position wird simuliert, per Tipp auf die Karte kannst du sie versetzen.</small></span><input type="checkbox" id="simToggle"></label>
+    <label class="toggle" id="simRow" hidden><span>Simulationsmodus <span class="sim-pill">Entwickler</span><small>Zum Testen ohne vor Ort zu sein. Deine Position wird simuliert, per Tipp auf die Karte kannst du sie versetzen.</small></span><input type="checkbox" id="simToggle"></label>
 
     <button class="btn btn-primary" id="planBtn" type="button">Tour zusammenstellen</button>
 
@@ -383,7 +388,7 @@ details[open].settings summary::after{content:" ▴"}
   </div>
 </section>
 
-<script src="content/augsburg.js"></script>
+<script src="content/cities.js"></script>
 <script src="content/phrases.js"></script>
 <script>
 /* =====================================================================
@@ -417,7 +422,7 @@ function notice(msg,ms=4500){ const n=$('#notice'); n.textContent=msg; n.hidden=
 /* =====================================================================
    Zustand & Einstellungen
    ===================================================================== */
-const DEFAULTS = {startKind:'rathaus', mode:'walk', minutes:120, themes:['geschichte','fugger','wasser'], loop:true,
+const DEFAULTS = {startKind:'', mode:'walk', minutes:120, themes:['geschichte','fugger','wasser'], loop:true,
                   autoplay:true, wayside:true, turns:false, rate:1, audio:true, sim:false, simSpeed:'5', voice:'gemini', v:2};
 const state = {
   settings: (()=>{ const st=Object.assign({}, DEFAULTS, store.get('settings', {}));
@@ -425,6 +430,7 @@ const state = {
     if(st.voice==='seraphina') st.voice='katja'; if(st.voice==='florian') st.voice='conrad';
     if(![1,1.25,1.5,2].includes(+st.rate)) st.rate=1;
     return st; })(),
+  dev: (()=>{ let d=store.get('dev',false); const q=new URLSearchParams(location.search); if(q.has('dev')){ d=q.get('dev')!=='0'; store.set('dev',d); } return d; })(),
   start:null, pickLL:null, pos:null, tour:null, legs:null, nav:null, sim:null, watchId:null, wake:null, storyCtx:null
 };
 const saveSettings = () => store.set('settings', state.settings);
@@ -466,7 +472,7 @@ async function enrichFromWikipedia(){
   }
   applyWiki(out); store.set('wiki_'+CITY.id,{t:Date.now(), d:out});
 }
-const wikiReady = Promise.race([ enrichFromWikipedia().catch(()=>{}), new Promise(r=>setTimeout(r,3500)) ]);
+let wikiReady = Promise.resolve();
 
 /* =====================================================================
    Tourplanung (Orienteering-Heuristik: Greedy-Einfügen + 2-opt)
@@ -617,7 +623,6 @@ const Speech = {
     this.el.preload='auto';
     this.el.addEventListener('ended',()=>this._done());
     this.el.addEventListener('error',()=>{ const it=this.playing; if(it&&it.src){ it.src=null; this._device(it); } });
-    fetch('audio/manifest.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(m=>{ this.manifest=m; showVoiceStatus(); }).catch(()=>{});
     if(this.ok){
       const pick=()=>{ const vs=speechSynthesis.getVoices().filter(v=>/^de/i.test(v.lang));
         this.voice=vs.find(v=>/premium|enhanced|neural|natural|online/i.test(v.name))||vs.find(v=>/anna|petra|helena|katja/i.test(v.name))||vs[0]||null; };
@@ -629,6 +634,10 @@ const Speech = {
   unlock(){
     if(this._unlocked||!this.ok) return; this._unlocked=true;
     try{ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); }catch(e){}
+  },
+  loadManifest(cityId){
+    this.manifest=null; showVoiceStatus();
+    fetch(`audio/manifest-${cityId}.json`,{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(m=>{ if(CITY&&CITY.id===cityId){ this.manifest=m; showVoiceStatus(); } }).catch(()=>{});
   },
   srcFor(key){
     const v=state.settings.voice; if(!key||v==='device'||!this.manifest||!this.manifest.voices) return null;
@@ -691,11 +700,12 @@ function showVoiceStatus(){
 /* =====================================================================
    Karte
    ===================================================================== */
+const INIT_CITY=CITIES.find(c=>c.id===state.settings.cityId)||CITIES[0];
 let map=null, mapReadyResolve; const mapReady=new Promise(r=>mapReadyResolve=r);
 const markers={stops:[],wayside:[],start:null,me:null};
 try{
   map=new maplibregl.Map({container:'map', style:'https://tiles.openfreemap.org/styles/liberty',
-    center:[CITY.center[1],CITY.center[0]], zoom:14.4, attributionControl:{compact:true}});
+    center:[INIT_CITY.center[1],INIT_CITY.center[0]], zoom:14.4, attributionControl:{compact:true}});
   map.on('load',()=>{
     map.addSource('route',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     try{
@@ -764,6 +774,7 @@ function showView(id){ ['viewPlan','viewPreview','viewNav','viewDone'].forEach(v
 const navActive=()=>!$('#viewNav').hidden;
 /* Eingeklappte Leiste unten: zeigt je nach Ansicht das Wichtigste und wie man das Menü öffnet */
 function updateMini(){
+  if(!CITY) return;
   const set=(eb,title,dist,eta,hint)=>{ $('#miniEyebrow').textContent=eb; $('#miniTarget').textContent=title;
     $('#miniRight').hidden=!dist; $('#miniDist').textContent=dist||''; $('#miniEta').textContent=eta||''; $('#miniHint').textContent=hint; };
   if(!$('#viewNav').hidden){
@@ -774,7 +785,7 @@ function updateMini(){
   } else if(!$('#viewDone').hidden){
     set('Geschafft', 'Tour beendet', '', '', 'Nach oben wischen für eine neue Tour');
   } else {
-    set(CITY.name+' · gegründet 15 v. Chr.', 'Deine Stadtführung', '', '', 'Nach oben wischen, um deine Stadtführung zu starten');
+    set(CITY.name+(CITY.tagline?' · '+CITY.tagline:''), 'Deine Stadtführung', '', '', 'Nach oben wischen, um deine Stadtführung zu starten');
   }
 }
 function visibleSheet(){ const sh=$('#sheet');
@@ -834,29 +845,80 @@ function bindSeg(id,key,onChange){
   const seg=$(id);
   const sync=()=>seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===state.settings[key])));
   seg.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; state.settings[key]=b.dataset.v; saveSettings(); sync(); onChange&&onChange(b.dataset.v); });
-  sync();
+  seg._sync=sync; sync();
 }
 function initPlanUI(){
-  bindSeg('#segStart','startKind',v=>{ $('#startHint').hidden=v!=='pick'; if(v==='rathaus'||v==='hbf'){ setStart(CITY.starts[v].ll); map&&map.flyTo({center:[state.start[1],state.start[0]],zoom:14.6}); } if(v==='me') locateOnce(true); });
+  bindSeg('#segStart','startKind',v=>{ $('#startHint').hidden=v!=='pick'; const st=CITY.starts.find(x=>x.id===v);
+    if(st){ setStart(st.ll); map&&map.flyTo({center:[st.ll[1],st.ll[0]],zoom:14.6}); } if(v==='me') locateOnce(true); });
+  $('#cityBtn').onclick=()=>{ const l=$('#cityList'); l.hidden=!l.hidden; $('#cityBtn').setAttribute('aria-expanded',String(!l.hidden)); if(!l.hidden) renderCityList(); positionLocate(); };
+  let taps=[]; $('#planTitle').addEventListener('click',()=>{ const now=Date.now(); taps=[...taps.filter(t=>now-t<3000),now];
+    if(taps.length>=7){ taps=[]; state.dev=!state.dev; store.set('dev',state.dev); applyDev(); notice(state.dev?'Entwicklermodus an: Simulationsmodus ist in der Planung verfügbar.':'Entwicklermodus aus.'); } });
   bindSeg('#segMode','mode');
   const tr=$('#timeRange'); tr.value=state.settings.minutes; $('#timeVal').textContent=fmtMin(+tr.value);
   tr.addEventListener('input',()=>{ state.settings.minutes=+tr.value; $('#timeVal').textContent=fmtMin(+tr.value); saveSettings(); });
-  const chips=$('#themeChips');
-  THEMES.forEach(t=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent=t.label; b.dataset.v=t.id;
-    b.setAttribute('aria-pressed',String(state.settings.themes.includes(t.id)));
-    b.onclick=()=>{ const on=state.settings.themes.includes(t.id); state.settings.themes=on? state.settings.themes.filter(x=>x!==t.id) : [...state.settings.themes,t.id];
-      b.setAttribute('aria-pressed',String(!on)); saveSettings(); };
-    chips.appendChild(b); });
+
   const ck=(id,key)=>{ const c=$(id); c.checked=!!state.settings[key]; c.onchange=()=>{ state.settings[key]=c.checked; saveSettings(); }; };
   ck('#loopToggle','loop');
   const st=$('#simToggle'); st.checked=!!state.settings.sim;
   st.onchange=()=>setSimMode(st.checked,true); ck('#optAutoplay','autoplay'); ck('#optWayside','wayside'); ck('#optTurns','turns');
   $('#testVoice').onclick=()=>{ Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); };
   bindSeg('#segVoice','voice',()=>{ Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); });
-  $('#startHint').hidden=state.settings.startKind!=='pick';
-  if(state.settings.startKind==='hbf') setStart(CITY.starts.hbf.ll);
-  else setStart(CITY.starts.rathaus.ll);
   $('#planBtn').onclick=doPlan;
+}
+
+/* =====================================================================
+   Städte: Auswahl, Laden, Erkennen
+   ===================================================================== */
+let CITY=null;
+const cityEntry=id=>CITIES.find(c=>c.id===id);
+function cityAt(ll){ let best=null; for(const c of CITIES){ const d=dist(ll,c.center); if(d<=c.radius&&(!best||d<best.d)) best={c,d}; } return best&&best.c; }
+function loadCityData(entry){
+  const D=globalThis.CITY_DATA||{}; if(D[entry.id]) return Promise.resolve(D[entry.id]);
+  return new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src=entry.file;
+    sc.onload=()=>res(globalThis.CITY_DATA[entry.id]); sc.onerror=()=>rej(new Error('Stadt konnte nicht geladen werden')); document.head.appendChild(sc); });
+}
+async function selectCity(id){
+  if(state.nav) return;
+  const entry=cityEntry(id)||CITIES[0];
+  try{ CITY=await loadCityData(entry); }catch(e){ notice('Die Stadt konnte nicht geladen werden. Bitte Internetverbindung prüfen.'); return; }
+  const s=state.settings; s.cityId=entry.id;
+  const valid=CITY.themes.map(t=>t.id);
+  s.themes=s.themes.filter(t=>valid.includes(t)); if(!s.themes.length) s.themes=valid.slice(0,3);
+  if(!['me','pick',...CITY.starts.map(x=>x.id)].includes(s.startKind)) s.startKind=CITY.starts[0].id;
+  saveSettings();
+  state.tour=null; state.legs=null; state.pickLL=null; state.simPos=null; clearStopMarkers(); drawRoute();
+  renderCityUI();
+  Speech.loadManifest(entry.id);
+  wikiReady=Promise.race([ enrichFromWikipedia().catch(()=>{}), new Promise(r=>setTimeout(r,3500)) ]);
+  wikiReady.then(()=>{ if(CITY.id===entry.id) drawWaysideMarkers(); });
+  const st=CITY.starts.find(x=>x.id===s.startKind)||CITY.starts[0]; setStart(st.ll);
+  map&&map.jumpTo({center:[CITY.center[1],CITY.center[0]],zoom:14.4});
+}
+function renderCityUI(){
+  $('#cityName').textContent=CITY.name; $('#cityTagline').textContent=CITY.tagline||'';
+  document.title='Stadtführer '+CITY.name;
+  const seg=$('#segStart');
+  seg.innerHTML=[['me','Mein Standort'],...CITY.starts.map(x=>[x.id,x.name]),['pick','Auf Karte']].map(([v,l])=>`<button type="button" data-v="${esc(v)}">${esc(l)}</button>`).join('');
+  seg._sync&&seg._sync(); $('#startHint').hidden=state.settings.startKind!=='pick';
+  const chips=$('#themeChips'); chips.innerHTML='';
+  CITY.themes.forEach(t=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent=t.label; b.dataset.v=t.id;
+    b.setAttribute('aria-pressed',String(state.settings.themes.includes(t.id)));
+    b.onclick=()=>{ const on=state.settings.themes.includes(t.id); state.settings.themes=on? state.settings.themes.filter(x=>x!==t.id) : [...state.settings.themes,t.id];
+      b.setAttribute('aria-pressed',String(!on)); saveSettings(); };
+    chips.appendChild(b); });
+  $('#cityList').hidden=true; $('#cityBtn').setAttribute('aria-expanded','false');
+  updateMini();
+}
+function renderCityList(){
+  const l=$('#cityList');
+  l.innerHTML=CITIES.map(c=>{ const d=state.pos&&!state.settings.sim? dist(state.pos,c.center) : null;
+    return `<button type="button" data-id="${esc(c.id)}" aria-current="${CITY&&c.id===CITY.id}"><span><b>${esc(c.name)}</b><br><span>${esc(c.tagline||'')}</span></span><span>${d!=null? fmtDist(d) : ''}</span></button>`; }).join('')
+    + (CITIES.length<2? '<div class="more">Weitere Städte folgen.</div>' : '');
+  l.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.dataset.id!==CITY.id) selectCity(b.dataset.id); else { l.hidden=true; positionLocate(); } });
+}
+function applyDev(){
+  $('#simRow').hidden=!state.dev;
+  if(!state.dev && state.settings.sim) setSimMode(false,false);
 }
 
 function getPosition(timeout=9000){
@@ -865,23 +927,26 @@ function getPosition(timeout=9000){
 }
 async function locateOnce(asStart){
   if(state.settings.sim){
-    const ll=state.simPos||CITY.starts.rathaus.ll; state.simPos=ll; setMe(ll); if(asStart) setStart(ll);
+    const ll=state.simPos||CITY.starts[0].ll; state.simPos=ll; setMe(ll); if(asStart) setStart(ll);
     follow=true; map&&map.flyTo({center:[ll[1],ll[0]],zoom:15.5});
     return ll;
   }
   try{
     const ll=await getPosition(); setMe(ll);
-    if(dist(ll,CITY.center)>15000){
-      setSimMode(true,false);
-      notice('Du bist gerade nicht in Augsburg. Ich habe den Simulationsmodus eingeschaltet: Du startest virtuell am Rathausplatz. Tippe auf die Karte, um deine Position zu versetzen.',8000);
-      return locateOnce(asStart);
+    const here=cityAt(ll);
+    if(!here){
+      if(state.dev){ setSimMode(true,false); notice(`Entwicklermodus: Du bist nicht in ${CITY.name}, deine Position wird simuliert (Start: ${CITY.starts[0].name}).`,7000); return locateOnce(asStart); }
+      notice(`Du bist gerade in keiner Stadt, für die es schon Touren gibt. Die Tour durch ${CITY.name} kannst du dir trotzdem ansehen.`,7000);
+      if(asStart) setStart(CITY.starts[0].ll);
+      return null;
     }
+    if(here.id!==CITY.id && !state.nav){ await selectCity(here.id); notice(`Willkommen in ${here.name}!`); }
     if(asStart) setStart(ll);
     map&&map.flyTo({center:[ll[1],ll[0]],zoom:15.5});
     return ll;
   }catch(e){
     notice('Standort nicht verfügbar. Erlaube den Standortzugriff in den Einstellungen deines Browsers.',6000);
-    if(asStart) setStart(CITY.starts.rathaus.ll);
+    if(asStart) setStart(CITY.starts[0].ll);
     return null;
   }
 }
@@ -892,7 +957,7 @@ async function doPlan(){
   const btn=$('#planBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Tour wird geplant …';
   try{
     if(s.startKind==='pick' && !state.pickLL){ notice('Tippe zuerst auf die Karte, um den Startpunkt zu setzen.'); return; }
-    if(!state.start) setStart(CITY.starts.rathaus.ll);
+    if(!state.start) setStart(CITY.starts[0].ll);
     await wikiReady;
     const start=state.start, SCENIC=0.85;   // 15 % der Zeit bleiben für Umwege zu Sehenswertem am Wegesrand
     let seq=planTour({start,mode:s.mode,minutes:s.minutes*SCENIC,themes:s.themes,loop:s.loop});
@@ -918,9 +983,9 @@ async function doPlan(){
 
 function renderPreview(total){
   const s=state.settings, meters=state.legs.reduce((a,l)=>a+l.distance,0);
-  const labels=THEMES.filter(t=>s.themes.includes(t.id)).map(t=>t.label);
+  const labels=CITY.themes.filter(t=>s.themes.includes(t.id)).map(t=>t.label);
   $('#pvEyebrow').textContent=(s.mode==='bike'?'Mit dem Rad':'Zu Fuß')+' · '+labels.slice(0,2).join(', ')+(labels.length>2?' …':'');
-  $('#pvTitle').textContent=state.tour.length+' Stationen durch Augsburg';
+  $('#pvTitle').textContent=state.tour.length+' Stationen durch '+CITY.name;
   $('#pvStats').innerHTML=`<div class="stat"><b>${fmtMin(total)}</b><span>Dauer</span></div><div class="stat"><b>${fmtDist(meters)}</b><span>Strecke</span></div><div class="stat"><b>${state.tour.length}</b><span>Stopps</span></div><div class="stat"><b>${state.legs.reduce((a,l)=>a+l.vias.length,0)}</b><span>Unterwegs-Geschichten</span></div>`;
   const w=$('#pvWarn'), pm=s.mode==='bike'? pushMeters(state.legs) : 0;
   w.hidden=state.routeOk && pm<30;
@@ -1148,7 +1213,7 @@ function simTick(){
 function openStory(s,{mode}){
   state.storyCtx={s,mode};
   const img=$('#storyImg'); if(s.img){ img.src=s.img; img.alt=s.name; img.hidden=false; $('#storyCap').hidden=false; } else { img.hidden=true; $('#storyCap').hidden=true; }
-  const labels=(s.themes||[]).map(t=>(THEMES.find(x=>x.id===t)||{}).label).filter(Boolean);
+  const labels=(s.themes||[]).map(t=>(CITY.themes.find(x=>x.id===t)||{}).label).filter(Boolean);
   $('#storyEyebrow').textContent=mode==='arrival'? 'Du bist da' : mode==='wayside'? 'Am Wegesrand' : labels.join(' · ');
   $('#storyTitle').textContent=s.name;
   $('#storyTeaser').textContent=s.teaser||''; $('#storyTeaser').hidden=!s.teaser;
@@ -1274,9 +1339,9 @@ $('#locateBtn').onclick=()=>{ follow=true; if(state.nav&&state.pos){ map&&map.fl
 let follow=true;
 function setSimMode(on,fromToggle){
   state.settings.sim=on; saveSettings(); $('#simToggle').checked=on; updateStartLabel();
-  if(on){ if(!state.simPos) state.simPos=CITY.starts.rathaus.ll;
+  if(on){ if(!state.simPos) state.simPos=CITY.starts[0].ll;
     if(state.settings.startKind==='me'){ setStart(state.simPos); setMe(state.simPos); }
-    if(fromToggle) notice('Simulationsmodus an. Bei „Mein Standort“ startest du am Rathausplatz, per Tipp auf die Karte setzt du deine Position woandershin.',6000);
+    if(fromToggle) notice(`Simulationsmodus an. Bei „Mein Standort“ startest du am ${CITY.starts[0].name}, per Tipp auf die Karte setzt du deine Position woandershin.`,6000);
   }
 }
 function updateStartLabel(){ $('#startBtn').textContent=state.settings.sim? 'Simulation starten' : 'Tour starten'; }
@@ -1305,9 +1370,11 @@ document.addEventListener('gesturestart',e=>{ if(!e.target.closest||!e.target.cl
 document.addEventListener('gesturechange',e=>{ if(!e.target.closest||!e.target.closest('#map')) e.preventDefault(); },{passive:false});
 
 /* Start */
-initPlanUI(); updateStartLabel(); showView('viewPlan');
-wikiReady.then(()=>drawWaysideMarkers());
-mapReady.then(()=>{ if(state.settings.startKind==='me') locateOnce(true); });
+initPlanUI(); updateStartLabel(); applyDev();
+selectCity(state.settings.cityId).then(()=>{
+  showView('viewPlan');
+  mapReady.then(()=>{ if(state.settings.startKind==='me') locateOnce(true); });
+});
 window.addEventListener('resize',positionLocate);
 if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>

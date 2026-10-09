@@ -1,7 +1,12 @@
-/* Inhalte: Augsburg
+/* Inhalte: Augsburg  (Vorlage für jede weitere Stadt: gleiche Struktur, eigene Datei)
    Koordinaten sind Näherungswerte und werden beim Start über die Wikipedia-API präzisiert.
    Änderst du Texte hier, erzeugt GitHub beim nächsten Deploy automatisch neue KI-Audios. */
-globalThis.THEMES = [
+(globalThis.CITY_DATA = globalThis.CITY_DATA || {}).augsburg = {
+  id:'augsburg', name:'Augsburg', tagline:'gegründet 15 v. Chr.', center:[48.3687,10.8986],
+  /* Startpunkte zur Auswahl (der erste ist Standard) */
+  starts:[ {id:'rathaus', name:'Rathausplatz', ll:[48.3688,10.8986]}, {id:'hbf', name:'Hauptbahnhof', ll:[48.3655,10.8857]} ],
+  /* Themen dieser Stadt: id wird in stops[].themes verwendet */
+  themes:[
   {id:'geschichte', label:'Geschichte'},
   {id:'fugger',     label:'Fugger & Geld'},
   {id:'wasser',     label:'Wasser & UNESCO'},
@@ -9,11 +14,8 @@ globalThis.THEMES = [
   {id:'kultur',     label:'Kunst & Kultur'},
   {id:'promis',     label:'Berühmte Augsburger'},
   {id:'natur',      label:'Natur & Aussicht'},
-];
+],
 
-globalThis.CITY = {
-  id:'augsburg', name:'Augsburg', center:[48.3687,10.8986],
-  starts:{ rathaus:{name:'Rathausplatz', ll:[48.3688,10.8986]}, hbf:{name:'Hauptbahnhof', ll:[48.3655,10.8857]} },
   intro:'Servus und willkommen in Augsburg! Diese Stadt ist über zweitausend Jahre alt, war einmal eine der reichsten Städte Europas und hat mehr Geschichten auf Lager, als in eine einzige Tour passen.',
   stops:[
   { id:'rathaus', name:'Rathaus', wiki:'Augsburger Rathaus', ll:[48.3687,10.8986], themes:['geschichte','kultur'], prio:3, dwell:10,
@@ -23,7 +25,7 @@ globalThis.CITY = {
       'Schau ganz nach oben auf den Giebel. Dort sitzt eine Zirbelnuss, die Augsburger nennen sie „Stadtpyr“. Sie ist seit Jahrhunderten das Wappenzeichen der Stadt und geht auf die Römerzeit zurück. Darunter prangt der Reichsadler, denn Augsburg war freie Reichsstadt und nur dem Kaiser unterstellt.',
       'Im Februar 1944 brannte das Rathaus nach Bombenangriffen fast vollständig aus. Den berühmten Goldenen Saal hat man in jahrelanger Arbeit rekonstruiert, rechtzeitig zur 2000-Jahr-Feier der Stadt 1985 war er wieder zugänglich. Wenn er geöffnet ist: hineingehen und an die Decke schauen.'],
     fact:'Augsburg wurde 15 vor Christus als römisches Militärlager gegründet und nach Kaiser Augustus benannt. Damit gehört es zu den ältesten Städten Deutschlands.',
-    look:'Die grüne Zirbelnuss ganz oben auf dem Giebel. Du findest sie in ganz Augsburg wieder, sogar auf Gullydeckeln.' },
+    look:'Die grüne Zirbelnuss ganz oben auf dem Giebel. Achte mal darauf: Sie begegnet dir in ganz Augsburg immer wieder.' },
 
   { id:'perlach', name:'Perlachturm', wiki:'Perlachturm', ll:[48.3690,10.8981], themes:['geschichte','natur'], prio:3, dwell:8,
     teaser:'70 Meter Ausblick und ein Erzengel, der einmal im Jahr zusticht.',

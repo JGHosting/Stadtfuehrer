@@ -1,4 +1,4 @@
-# Stadtführer Augsburg – Prototyp
+# Stadtführer – Prototyp
 
 Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit und Themen wählen → die App plant eine Tour, navigiert dich hin und erzählt an jedem Stopp und unterwegs Geschichten (zum Lesen oder Anhören).
 
@@ -22,9 +22,18 @@ Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit 
 ## Grenzen des Prototyps
 - Als Web-App läuft die Standortverfolgung nur bei eingeschaltetem Bildschirm (die App hält ihn wach).
 - Die Stimme ist die eingebaute Gerätestimme.
-- Inhalte stehen direkt in `index.html` im Objekt `CITY`. Eine neue Stadt = ein neues Objekt mit gleicher Struktur.
 
 ## KI-Stimme
 Die Vorlese-Texte stehen in `content/augsburg.js` und `content/phrases.js`. Beim Deploy erzeugt GitHub Actions
 daraus MP3s mit Microsoft-Neural-Stimmen Katja und Conrad (edge-tts) im Ordner `audio/` – nur für neue oder geänderte Texte.
 Fehlt eine Datei, spricht die Gerätestimme. Für die App-Store-Version auf den offiziellen Azure-Speech-Dienst wechseln.
+
+## Neue Stadt hinzufügen
+1. `content/<id>.js` nach dem Muster von `content/augsburg.js` anlegen (Startpunkte, Themen, Stopps, Wegesrand, Viertel).
+2. In `content/cities.js` einen Eintrag ergänzen (Name, Untertitel, Mittelpunkt, Radius, Datei).
+3. Hochladen. GitHub erzeugt die Audios (`audio/manifest-<id>.json`), die App erkennt die Stadt am Standort
+   oder man wählt sie oben im Menü aus. Geladen wird immer nur die Datei der gewählten Stadt.
+
+## Entwicklermodus
+Sieben Mal schnell auf „Deine Stadtführung“ tippen (oder `?dev=1` an die Adresse hängen) blendet den
+Simulationsmodus ein. Normale Nutzer sehen ihn nicht.
