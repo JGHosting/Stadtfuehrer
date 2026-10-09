@@ -93,8 +93,9 @@ def run_gemini():
     manifest["voices"]["gemini"] = m
 
 # ---------------------------------------------------------------- edge-tts
-EDGE_VOICES = {"seraphina": ["de-DE-SeraphinaMultilingualNeural", "de-DE-KatjaNeural"],
-               "florian":   ["de-DE-FlorianMultilingualNeural", "de-DE-ConradNeural"]}
+# Rein deutsche Stimmen: Die „Multilingual“-Stimmen raten die Sprache pro Satz und lesen kurze Titel oft englisch.
+EDGE_VOICES = {"katja":  ["de-DE-KatjaNeural"],
+               "conrad": ["de-DE-ConradNeural"]}
 
 async def run_edge():
     import edge_tts

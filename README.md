@@ -26,5 +26,5 @@ Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit 
 
 ## KI-Stimme
 Die Vorlese-Texte stehen in `content/augsburg.js` und `content/phrases.js`. Beim Deploy erzeugt GitHub Actions
-daraus MP3s mit Microsoft-Neural-Stimmen (edge-tts) im Ordner `audio/` – nur für neue oder geänderte Texte.
+daraus MP3s mit Microsoft-Neural-Stimmen Katja und Conrad (edge-tts) im Ordner `audio/` – nur für neue oder geänderte Texte.
 Fehlt eine Datei, spricht die Gerätestimme. Für die App-Store-Version auf den offiziellen Azure-Speech-Dienst wechseln.

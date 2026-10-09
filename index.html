@@ -129,7 +129,9 @@ details[open].settings summary::after{content:" ▴"}
 /* Banner */
 .banner{position:fixed;z-index:12;left:10px;right:10px;top:calc(var(--safe-t) + 10px);max-width:540px;margin:0 auto;background:var(--pine);color:var(--pine-ink);border-radius:18px;padding:12px 14px;display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.22)}
 .banner.push{background:var(--gold);color:var(--surface)}
-.navmini{position:fixed;z-index:12;left:10px;right:10px;bottom:calc(var(--safe-b) + 10px);max-width:540px;margin:0 auto;background:var(--surface);color:var(--ink);border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);border:1px solid var(--line);text-align:left;touch-action:none;width:auto}
+.navmini{position:fixed;z-index:12;left:10px;right:10px;bottom:calc(var(--safe-b) + 10px);max-width:540px;margin:0 auto;background:var(--surface);color:var(--ink);border-radius:18px;padding:12px 16px 10px;display:flex;flex-direction:column;align-items:stretch;gap:6px;box-shadow:0 8px 24px rgba(0,0,0,.18);border:1px solid var(--line);text-align:left;touch-action:none;width:auto}
+.navmini .row{display:flex;align-items:center;gap:12px}
+.navmini .hint{font-size:12.5px;color:var(--muted);text-align:center}
 .navmini .t{flex:1;min-width:0}
 .navmini .t span{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .navmini .t b{display:block;font-family:var(--f-read);font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -227,9 +229,12 @@ details[open].settings summary::after{content:" ▴"}
 </button>
 
 <button id="navMini" class="navmini" type="button" hidden aria-label="Menü öffnen">
-  <svg class="up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg>
-  <span class="t"><span id="miniEyebrow">Nächster Stopp</span><b id="miniTarget">–</b></span>
-  <span class="d"><b id="miniDist">–</b><span id="miniEta"></span></span>
+  <span class="row">
+    <svg class="up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg>
+    <span class="t"><span id="miniEyebrow">Nächster Stopp</span><b id="miniTarget">–</b></span>
+    <span class="d" id="miniRight"><b id="miniDist">–</b><span id="miniEta"></span></span>
+  </span>
+  <span class="hint" id="miniHint">Nach oben wischen für das Menü</span>
 </button>
 <section id="sheet" class="sheet" aria-label="Tourplanung">
   <div class="grip-area" id="grip" role="button" aria-label="Menü ein- oder ausklappen" tabindex="0"><div class="grip"></div></div>
@@ -281,8 +286,8 @@ details[open].settings summary::after{content:" ▴"}
         <div class="field"><span class="label">Stimme</span>
           <div class="seg" id="segVoice">
             <button type="button" data-v="gemini">Gemini</button>
-            <button type="button" data-v="seraphina">Seraphina</button>
-            <button type="button" data-v="florian">Florian</button>
+            <button type="button" data-v="katja">Katja</button>
+            <button type="button" data-v="conrad">Conrad</button>
             <button type="button" data-v="device">Gerät</button>
           </div>
           <p class="hint" id="voiceStatus"></p>
@@ -417,6 +422,7 @@ const DEFAULTS = {startKind:'rathaus', mode:'walk', minutes:120, themes:['geschi
 const state = {
   settings: (()=>{ const st=Object.assign({}, DEFAULTS, store.get('settings', {}));
     if(!(st.v>=2)){ st.turns=false; st.voice='gemini'; st.v=2; }
+    if(st.voice==='seraphina') st.voice='katja'; if(st.voice==='florian') st.voice='conrad';
     if(![1,1.25,1.5,2].includes(+st.rate)) st.rate=1;
     return st; })(),
   start:null, pickLL:null, pos:null, tour:null, legs:null, nav:null, sim:null, watchId:null, wake:null, storyCtx:null
@@ -626,7 +632,7 @@ const Speech = {
   },
   srcFor(key){
     const v=state.settings.voice; if(!key||v==='device'||!this.manifest||!this.manifest.voices) return null;
-    for(const vid of [v,'seraphina']){ const f=this.manifest.voices[vid]&&this.manifest.voices[vid][key]; if(f) return 'audio/'+f; }
+    for(const vid of [v,'katja']){ const f=this.manifest.voices[vid]&&this.manifest.voices[vid][key]; if(f) return 'audio/'+f; }
     return null;
   },
   pause(){ if(!this.playing||this.paused) return; this.paused=true;
@@ -677,9 +683,9 @@ Speech.init();
 function showVoiceStatus(){
   const m=Speech.manifest, el=$('#voiceStatus'); if(!el) return;
   if(!m||!m.voices){ el.textContent='KI-Audios noch nicht verfügbar – es spricht die Gerätestimme.'; return; }
-  const total=Object.keys(m.voices.seraphina||{}).length, g=Object.keys(m.voices.gemini||{}).length;
-  el.textContent= !g? 'Gemini-Audios werden noch erzeugt. Bis dahin spricht Seraphina.'
-    : g<total? `Gemini: ${g} von ${total} Texten fertig. Der Rest wird automatisch nachproduziert, bis dahin springt Seraphina ein.`
+  const total=Object.keys(m.voices.katja||{}).length, g=Object.keys(m.voices.gemini||{}).length;
+  el.textContent= !g? 'Gemini-Audios werden noch erzeugt. Bis dahin spricht Katja.'
+    : g<total? `Gemini: ${g} von ${total} Texten fertig. Der Rest wird automatisch nachproduziert, bis dahin springt Katja ein.`
     : `Gemini: alle ${total} Texte fertig.`;
 }
 /* =====================================================================
@@ -756,8 +762,23 @@ function fitTour(){
    ===================================================================== */
 function showView(id){ ['viewPlan','viewPreview','viewNav','viewDone'].forEach(v=>$('#'+v).hidden=(v!==id)); $('#sheet').scrollTop=0; setSheet(false); }
 const navActive=()=>!$('#viewNav').hidden;
+/* Eingeklappte Leiste unten: zeigt je nach Ansicht das Wichtigste und wie man das Menü öffnet */
+function updateMini(){
+  const set=(eb,title,dist,eta,hint)=>{ $('#miniEyebrow').textContent=eb; $('#miniTarget').textContent=title;
+    $('#miniRight').hidden=!dist; $('#miniDist').textContent=dist||''; $('#miniEta').textContent=eta||''; $('#miniHint').textContent=hint; };
+  if(!$('#viewNav').hidden){
+    const nav=state.nav, leg=nav&&state.legs[nav.legIdx]; if(!leg) return;
+    set(leg.target.home?'Zurück zum Start':`Stopp ${nav.legIdx+1} von ${state.tour.length}`, leg.target.name, $('#navDist').textContent, $('#navEta').textContent, 'Nach oben wischen für das Menü');
+  } else if(!$('#viewPreview').hidden){
+    set('Deine Tour', $('#pvTitle').textContent, '', '', 'Nach oben wischen, um die Tour zu starten');
+  } else if(!$('#viewDone').hidden){
+    set('Geschafft', 'Tour beendet', '', '', 'Nach oben wischen für eine neue Tour');
+  } else {
+    set(CITY.name+' · gegründet 15 v. Chr.', 'Deine Stadtführung', '', '', 'Nach oben wischen, um deine Stadtführung zu starten');
+  }
+}
 function visibleSheet(){ const sh=$('#sheet');
-  if(sheetCollapsed && navActive()){ const r=$('#navMini').getBoundingClientRect(); return r.height? window.innerHeight-r.top : 110; }
+  if(sheetCollapsed){ const r=$('#navMini').getBoundingClientRect(); return r.height? window.innerHeight-r.top : 110; }
   return sh.offsetHeight - (sheetCollapsed? collapseOffset():0); }
 function positionLocate(){ requestAnimationFrame(()=>{ const base=visibleSheet()+12, pl=$('#player');
   $('#locateBtn').style.bottom=base+'px';
@@ -766,10 +787,10 @@ function positionLocate(){ requestAnimationFrame(()=>{ const base=visibleSheet()
 /* ---------- Wischbares Menü ---------- */
 let sheetCollapsed=false;
 const PEEK=104;
-function collapseOffset(){ const sh=$('#sheet'); return navActive()? sh.offsetHeight+20 : Math.max(0, sh.offsetHeight-PEEK); }
+function collapseOffset(){ const sh=$('#sheet'); return sh.offsetHeight+20; }
 function setSheet(collapsed){
   const sh=$('#sheet'); sheetCollapsed=collapsed;
-  $('#navMini').hidden=!(collapsed && navActive());
+  updateMini(); $('#navMini').hidden=!collapsed;
   if(collapsed) sh.scrollTop=0;
   sh.classList.toggle('collapsed',collapsed);
   sh.style.transform=collapsed? `translateY(${collapseOffset()}px)` : '';
@@ -1032,8 +1053,7 @@ function updateNavUI(ll){
   $('#navTarget').textContent=leg.target.name;
   const rem=legRemaining(ll);
   $('#navDist').textContent=fmtDist(rem); $('#navEta').textContent='ca. '+fmtMin(Math.max(1,rem/SPEED[state.settings.mode]));
-  $('#miniEyebrow').textContent=isHome? 'Zurück zum Start' : `Stopp ${nav.legIdx+1} von ${n}`;
-  $('#miniTarget').textContent=leg.target.name; $('#miniDist').textContent=fmtDist(rem); $('#miniEta').textContent=$('#navEta').textContent;
+  if(sheetCollapsed) updateMini();
   const cur=leg.steps[nav.stepIdx], pushing=state.settings.mode==='bike' && isPush(cur);
   $('#banner').classList.toggle('push',pushing);
   if(pushing && !nav.pushTold.has(nav.legIdx+'-'+nav.stepIdx)){
