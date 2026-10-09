@@ -1,0 +1,21 @@
+{
+  "name": "stadtfuehrer-native",
+  "private": true,
+  "description": "Native iOS-Hülle (Capacitor) für die Stadtführer-Web-App",
+  "scripts": {
+    "copy-web": "node scripts/copy-web.mjs",
+    "setup-ios": "npm run copy-web && npx cap add ios && node scripts/patch-ios.mjs && npx cap sync ios",
+    "sync": "npm run copy-web && npx cap sync ios",
+    "open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/geolocation": "^8.2.0",
+    "@capacitor/status-bar": "^8.0.0",
+    "@capacitor-community/background-geolocation": "^1.2.26"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0"
+  }
+}

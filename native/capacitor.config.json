@@ -1,0 +1,15 @@
+{
+  "appId": "dev.test.stadtfuehrer",
+  "appName": "Stadtführer",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#EDF0EC"
+  },
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DEFAULT"
+    }
+  }
+}

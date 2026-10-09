@@ -424,6 +424,10 @@ details[open].settings summary::after{content:" ▴"}
    Hilfsfunktionen
    ===================================================================== */
 const $ = s => document.querySelector(s);
+/* Läuft die App als native iOS-App (Capacitor)? Dann: Standort im Hintergrund, Audios von GitHub Pages */
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const nativePlugin = name => NATIVE && window.Capacitor.registerPlugin ? window.Capacitor.registerPlugin(name) : null;
+const AUDIO_BASE = NATIVE ? ((globalThis.APP_CONFIG&&APP_CONFIG.webBase)||'')+'audio/' : 'audio/';
 const store = {
   get(k,d){ try{ const v=localStorage.getItem('sf_'+k); return v==null?d:JSON.parse(v);}catch(e){ return d; } },
   set(k,v){ try{ localStorage.setItem('sf_'+k, JSON.stringify(v)); }catch(e){} }
@@ -706,11 +710,11 @@ const Speech = {
   },
   loadManifest(cityId){
     this.manifest=null; showVoiceStatus();
-    fetch(`audio/manifest-${cityId}.json`,{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(m=>{ if(CITY&&CITY.id===cityId){ this.manifest=m; showVoiceStatus(); } }).catch(()=>{});
+    fetch(`${AUDIO_BASE}manifest-${cityId}.json`,{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(m=>{ if(CITY&&CITY.id===cityId){ this.manifest=m; showVoiceStatus(); } }).catch(()=>{});
   },
   srcFor(key){
     const v=state.settings.voice; if(!key||v==='device'||!this.manifest||!this.manifest.voices) return null;
-    for(const vid of [v,'katja']){ const f=this.manifest.voices[vid]&&this.manifest.voices[vid][key]; if(f) return 'audio/'+f; }
+    for(const vid of [v,'katja']){ const f=this.manifest.voices[vid]&&this.manifest.voices[vid][key]; if(f) return AUDIO_BASE+f; }
     return null;
   },
   pause(){ if(!this.playing||this.paused) return; this.paused=true;
@@ -993,6 +997,8 @@ function applyDev(){
 }
 
 function getPosition(timeout=9000){
+  const G=nativePlugin('Geolocation');
+  if(G) return G.getCurrentPosition({enableHighAccuracy:true,timeout,maximumAge:30000}).then(p=>[p.coords.latitude,p.coords.longitude]);
   return new Promise((res,rej)=>{ if(!navigator.geolocation) return rej(new Error('nogeo'));
     navigator.geolocation.getCurrentPosition(p=>res([p.coords.latitude,p.coords.longitude]),rej,{enableHighAccuracy:true,timeout,maximumAge:30000}); });
 }
@@ -1114,6 +1120,15 @@ async function startTour(simulate){
     setMe(state.legs[0].pts[0]); map&&map.flyTo({center:[state.legs[0].pts[0][1],state.legs[0].pts[0][0]],zoom:16.4});
     onPosition(state.legs[0].pts[0]);
   } else {
+    const BG=nativePlugin('BackgroundGeolocation');
+    if(BG){
+      $('#navHint').textContent='Die Führung läuft auch bei gesperrtem Bildschirm weiter.';
+      BG.addWatcher({ backgroundTitle:'Stadtführung läuft', backgroundMessage:'Deine Tour geht weiter.', requestPermissions:true, stale:false, distanceFilter:3 },
+        (loc,err)=>{ if(err){ if(err.code==='NOT_AUTHORIZED') notice('Bitte erlaube den Standortzugriff in den iPhone-Einstellungen.',6000); return; }
+          if(!state.sim) onPosition([loc.latitude,loc.longitude],loc.accuracy); })
+        .then(id=>{ state.bgWatcher=id; });
+      updateNavUI(); return;
+    }
     $('#navHint').textContent='Lass den Bildschirm an. Als Web-App kann der Standort sonst nicht verfolgt werden.';
     if(navigator.geolocation){
       state.watchId=navigator.geolocation.watchPosition(p=>{ if(!state.sim) onPosition([p.coords.latitude,p.coords.longitude],p.coords.accuracy); },
@@ -1256,6 +1271,7 @@ function finishTour(){
 }
 function stopTracking(){
   if(state.watchId!=null){ navigator.geolocation.clearWatch(state.watchId); state.watchId=null; }
+  if(state.bgWatcher!=null){ const BG=nativePlugin('BackgroundGeolocation'); BG&&BG.removeWatcher({id:state.bgWatcher}); state.bgWatcher=null; }
   if(state.sim){ clearInterval(state.sim.timer); state.sim=null; }
   if(state.wake){ state.wake.release().catch(()=>{}); state.wake=null; }
 }
