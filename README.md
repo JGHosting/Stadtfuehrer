@@ -10,10 +10,12 @@ Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit 
 5. Auf dem iPhone in Safari öffnen → Teilen → „Zum Home-Bildschirm“.
 
 ## Dateien
-- `index.html` – die ganze App inkl. aller Inhalte (Stopps, Wegesrand-Erzählungen, Viertel)
+- `index.html` – die App
+- `content/` – Städte (`cities.js` + eine Datei pro Stadt), Vorlese-Sätze (`phrases.js`), Einstellungen (`config.js`)
+- `server/` – eigener Routing-Server, `native/` – iOS-App mit Capacitor, `legal/` – Impressum & Datenschutz
 - `manifest.webmanifest`, `sw.js`, `icon-*.png` – damit sie sich wie eine App installieren lässt
 
-## Verwendete Dienste (alle kostenlos, ohne API-Key)
+## Verwendete Dienste
 - Karte: OpenFreeMap (OpenStreetMap-Daten) mit MapLibre
 - Routing: routing.openstreetmap.de (OSRM, betrieben von FOSSGIS) – Fair-Use, für einen Prototyp okay; für die Store-Version eigenen Server aufsetzen
 - Fotos & genaue Koordinaten: Wikipedia-API
@@ -23,9 +25,12 @@ Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit 
 - Als Web-App läuft die Standortverfolgung nur bei eingeschaltetem Bildschirm (die App hält ihn wach).
 
 ## KI-Stimme
-Die Vorlese-Texte stehen in `content/augsburg.js` und `content/phrases.js`. Beim Deploy erzeugt GitHub Actions
-daraus MP3s mit Microsoft-Neural-Stimmen Katja und Conrad (edge-tts) im Ordner `audio/` – nur für neue oder geänderte Texte.
-Fehlt eine Datei, spricht die Gerätestimme. Für die App-Store-Version auf den offiziellen Azure-Speech-Dienst wechseln.
+Die Vorlese-Texte stehen in den Stadtdateien (`content/<stadt>.js`) und `content/phrases.js`. Beim Deploy erzeugt GitHub Actions
+daraus MP3s im Ordner `audio/` – nur für neue oder geänderte Texte:
+- **Gemini** (Hauptstimme, bezahlter Zugang, Schlüssel als Secret `GEMINI_API_KEY`). Kostenbremse: max. 150 Anfragen pro Lauf.
+  Lange Erzeugung läuft nachts, per Hand gestartet oder bei Commits mit `[audio]` in der Nachricht.
+- **Katja und Conrad** (Microsoft, edge-tts) als Ersatz, falls eine Gemini-Datei fehlt.
+Den Stand zeigt die App im Entwicklerbereich unter „KI-Audios“ (`audio/status.json`).
 
 ## Neue Stadt hinzufügen
 1. `content/<id>.js` nach dem Muster von `content/augsburg.js` anlegen (Startpunkte, Themen, Highlight-Rangfolge, Stopps mit Priorität, Wegesrand, Viertel).
