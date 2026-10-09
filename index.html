@@ -146,6 +146,7 @@ details[open].settings summary::after{content:" ▴"}
 .citylist b{font-size:16px}
 .citylist span{font-size:13px;color:var(--muted)}
 .citylist .more{padding:10px 14px;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+.textin{font:16px var(--f-ui);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);color:var(--ink);width:100%}
 .legal-links{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;padding-top:4px}
 .legal-links a{color:var(--muted)}
 .welcome{position:fixed;inset:0;z-index:40;background:rgba(10,16,13,.55);display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(16px + var(--safe-b))}
@@ -321,6 +322,11 @@ details[open].settings summary::after{content:" ▴"}
         <label class="toggle"><span>Erzählungen am Wegesrand</span><input type="checkbox" id="optWayside"></label>
         <label class="toggle"><span>Abbiegehinweise ansagen<small>Standardmäßig aus. Die Pfeile oben zeigen dir immer den Weg.</small></span><input type="checkbox" id="optTurns"></label>
         <button class="btn btn-secondary" id="testVoice" type="button">Stimme testen</button>
+        <div class="field" id="devRoutingRow" hidden>
+          <span class="label">Routing-Server (Entwickler) <span class="sim-pill">Entwickler</span></span>
+          <input type="url" id="devRouting" class="textin" placeholder="https://…trycloudflare.com" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <p class="hint">Leer = FOSSGIS-Dienst. Eigener Valhalla-Server: siehe server/README.md im Repo.</p>
+        </div>
       </div>
     </details>
     <nav class="legal-links" aria-label="Rechtliches"><a href="legal/impressum.html">Impressum</a><a href="legal/datenschutz.html">Datenschutz</a><a href="legal/lizenzen.html">Quellen &amp; Lizenzen</a></nav>
@@ -334,6 +340,7 @@ details[open].settings summary::after{content:" ▴"}
     </div>
     <div class="stats" id="pvStats"></div>
     <p class="hint" id="pvWarn" hidden></p>
+    <p class="hint" id="pvSource" hidden></p>
     <div class="btn-row">
       <button class="btn btn-primary" id="startBtn" type="button">Tour starten</button>
     </div>
@@ -409,6 +416,7 @@ details[open].settings summary::after{content:" ▴"}
   </div>
 </section>
 
+<script src="content/config.js"></script>
 <script src="content/cities.js"></script>
 <script src="content/phrases.js"></script>
 <script>
@@ -559,14 +567,35 @@ function planTour({start,mode,minutes,themes,loop}){
 /* =====================================================================
    Routing (OSRM von FOSSGIS, kostenlos, ohne API-Key)
    ===================================================================== */
+function routingConfig(){
+  const dev=state.dev&&store.get('devRouting','');
+  return dev? {provider:'valhalla', url:dev.replace(/\/+$/,'')} : (globalThis.APP_CONFIG&&APP_CONFIG.routing)||{provider:'osrm',url:'https://routing.openstreetmap.de'};
+}
+function decodePolyline6(str){
+  let i=0,lat=0,lon=0; const out=[];
+  while(i<str.length){ for(const k of [0,1]){ let r=0,sh=0,b; do{ b=str.charCodeAt(i++)-63; r|=(b&31)<<sh; sh+=5; }while(b>=32);
+      const d=(r&1)? ~(r>>1) : (r>>1); if(k===0) lat+=d; else lon+=d; }
+    out.push([lon/1e6,lat/1e6]); }
+  return out;
+}
 async function fetchRoute(points,mode){
-  const prof=mode==='bike'?'routed-bike':'routed-foot';
-  const coords=points.map(p=>p[1].toFixed(6)+','+p[0].toFixed(6)).join(';');
-  const url=`https://routing.openstreetmap.de/${prof}/route/v1/driving/${coords}?overview=false&geometries=geojson&steps=true&continue_straight=true`;
+  const cfg=routingConfig();
   const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
   try{
-    const r=await fetch(url,{signal:ctrl.signal}); if(!r.ok) throw new Error('HTTP '+r.status);
-    const j=await r.json(); if(j.code!=='Ok') throw new Error(j.code);
+    let j;
+    if(cfg.provider==='valhalla'){
+      const body={ locations:points.map(p=>({lat:p[0],lon:p[1],type:'break'})), costing: mode==='bike'?'bicycle':'pedestrian',
+        costing_options:{ bicycle:{bicycle_type:'Hybrid'} }, format:'osrm', shape_format:'geojson',
+        directions_options:{ units:'kilometers', language:'de-DE' } };
+      const r=await fetch(cfg.url+'/route',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});
+      if(!r.ok) throw new Error('HTTP '+r.status); j=await r.json();
+      j.routes[0].legs.forEach(l=>l.steps.forEach(st=>{ if(typeof st.geometry==='string') st.geometry={coordinates:decodePolyline6(st.geometry)}; }));
+    } else {
+      const prof=mode==='bike'?'routed-bike':'routed-foot';
+      const coords=points.map(p=>p[1].toFixed(6)+','+p[0].toFixed(6)).join(';');
+      const r=await fetch(`${cfg.url}/${prof}/route/v1/driving/${coords}?overview=false&geometries=geojson&steps=true&continue_straight=true`,{signal:ctrl.signal});
+      if(!r.ok) throw new Error('HTTP '+r.status); j=await r.json(); if(j.code!=='Ok') throw new Error(j.code);
+    }
     return j.routes[0].legs;
   } finally { clearTimeout(to); }
 }
@@ -904,6 +933,8 @@ function initPlanUI(){
   $('#testVoice').onclick=()=>{ Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); };
   bindSeg('#segVoice','voice',()=>{ Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); });
   $('#planBtn').onclick=doPlan;
+  const dr=$('#devRouting'); dr.value=store.get('devRouting','');
+  dr.onchange=()=>{ store.set('devRouting',dr.value.trim()); notice(dr.value.trim()? 'Eigener Routing-Server eingetragen.' : 'Zurück zum FOSSGIS-Routing.'); };
 }
 
 /* =====================================================================
@@ -957,7 +988,7 @@ function renderCityList(){
   l.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.dataset.id!==CITY.id) selectCity(b.dataset.id); else { l.hidden=true; positionLocate(); } });
 }
 function applyDev(){
-  $('#simRow').hidden=!state.dev;
+  $('#simRow').hidden=!state.dev; $('#devRoutingRow').hidden=!state.dev;
   if(!state.dev && state.settings.sim) setSimMode(false,false);
 }
 
@@ -1028,6 +1059,7 @@ function renderPreview(total){
   $('#pvTitle').textContent=state.tour.length+' Stationen durch '+CITY.name;
   $('#pvStats').innerHTML=`<div class="stat"><b>${fmtMin(total)}</b><span>Dauer</span></div><div class="stat"><b>${fmtDist(meters)}</b><span>Strecke</span></div><div class="stat"><b>${state.tour.length}</b><span>Stopps</span></div><div class="stat"><b>${state.legs.reduce((a,l)=>a+l.vias.length,0)}</b><span>Unterwegs-Geschichten</span></div>`;
   const w=$('#pvWarn'), pm=s.mode==='bike'? pushMeters(state.legs) : 0;
+  $('#pvSource').hidden=!state.dev; $('#pvSource').textContent='Route: '+(routingConfig().provider==='valhalla'?'eigener Server ('+routingConfig().url+')':'FOSSGIS-Dienst');
   w.hidden=state.routeOk && pm<30;
   w.textContent=!state.routeOk? 'Der Routing-Dienst ist gerade nicht erreichbar. Die Linien zeigen nur die Luftlinie, Abbiegehinweise fehlen.'
     : `Davon ca. ${fmtDist(pm)} durch Fußgängerzonen. Dort musst du absteigen und schieben, die Route ist gelb markiert und die Zeit ist mit Gehtempo eingerechnet.`;

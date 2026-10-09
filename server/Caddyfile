@@ -1,0 +1,14 @@
+# routing.DEINE-DOMAIN.de durch deine (Sub-)Domain ersetzen. Caddy holt das HTTPS-Zertifikat automatisch.
+routing.DEINE-DOMAIN.de {
+  header {
+    Access-Control-Allow-Origin *
+    Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers "Content-Type"
+  }
+  @preflight method OPTIONS
+  respond @preflight 204
+  # Nur die Endpunkte freigeben, die die App braucht
+  @allowed path /route /status
+  reverse_proxy @allowed valhalla:8002
+  respond 404
+}

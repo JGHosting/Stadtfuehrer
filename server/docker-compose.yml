@@ -1,0 +1,37 @@
+# Eigener Routing-Server für die Stadtführer-App (Valhalla, OpenStreetMap-Daten Bayern)
+# Start:  docker compose up -d      Logs:  docker compose logs -f valhalla
+# Der erste Start baut die Routing-Daten (je nach Rechner 20–60 Minuten), danach startet der Server in Sekunden.
+services:
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted:latest
+    container_name: valhalla
+    restart: unless-stopped
+    ports:
+      - "8002:8002"            # nur für Tests direkt erreichbar; auf dem VPS läuft alles über Caddy (HTTPS)
+    volumes:
+      - ./valhalla_data:/custom_files
+    environment:
+      - tile_urls=https://download.geofabrik.de/europe/germany/bayern-latest.osm.pbf
+      - use_tiles_ignore_pbf=True
+      - build_elevation=False     # Höhenprofil: für Rad später interessant, braucht aber viel Speicher
+      - build_admins=True
+      - build_time_zones=True
+      - serve_tiles=True
+      - server_threads=2
+
+  # HTTPS-Vorschaltung – nur auf dem eigenen Server mit Domain nötig (Profil "vps")
+  caddy:
+    image: caddy:2
+    profiles: ["vps"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - valhalla
+
+volumes:
+  caddy_data:
