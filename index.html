@@ -107,6 +107,7 @@ details[open].settings summary::after{content:" ▴"}
 .num{width:28px;height:28px;border-radius:50%;background:var(--red);color:var(--red-ink);display:grid;place-items:center;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
 .stoplist .t{min-width:0}
 .stoplist .t b{display:block;font-size:15px}
+.hl{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--red);border:1px solid var(--red);border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:2px;white-space:nowrap}
 .stoplist .t span{font-size:13px;color:var(--muted)}
 .stoplist .m{font-size:12px;color:var(--muted);white-space:nowrap;padding-top:3px}
 
@@ -272,9 +273,8 @@ details[open].settings summary::after{content:" ▴"}
   <!-- PLAN -->
   <div id="viewPlan" class="view">
     <div>
-      <button class="citybtn" id="cityBtn" type="button" aria-expanded="false"><span class="eyebrow"><span id="cityName">–</span> · <span id="cityTagline"></span></span><span class="caret" aria-hidden="true">▾</span></button>
+      <div class="eyebrow"><span id="cityName">–</span> · <span id="cityTagline"></span></div>
       <h1 id="planTitle">Deine Stadtführung</h1>
-      <div class="citylist" id="cityList" hidden></div>
     </div>
 
     <div class="field">
@@ -302,7 +302,6 @@ details[open].settings summary::after{content:" ▴"}
     </div>
 
     <label class="toggle"><span>Rundtour, zurück zum Startpunkt</span><input type="checkbox" id="loopToggle"></label>
-    <label class="toggle" id="simRow" hidden><span>Simulationsmodus <span class="sim-pill">Entwickler</span><small>Zum Testen ohne vor Ort zu sein. Deine Position wird simuliert, per Tipp auf die Karte kannst du sie versetzen.</small></span><input type="checkbox" id="simToggle"></label>
 
     <button class="btn btn-primary" id="planBtn" type="button">Tour zusammenstellen</button>
 
@@ -322,8 +321,16 @@ details[open].settings summary::after{content:" ▴"}
         <label class="toggle"><span>Erzählungen am Wegesrand</span><input type="checkbox" id="optWayside"></label>
         <label class="toggle"><span>Abbiegehinweise ansagen<small>Standardmäßig aus. Die Pfeile oben zeigen dir immer den Weg.</small></span><input type="checkbox" id="optTurns"></label>
         <button class="btn btn-secondary" id="testVoice" type="button">Stimme testen</button>
-        <div class="field" id="devRoutingRow" hidden>
-          <span class="label">Routing-Server (Entwickler) <span class="sim-pill">Entwickler</span></span>
+      </div>
+    </details>
+    <details class="settings" id="devSection" hidden>
+      <summary>Entwickler <span class="sim-pill">Entwickler</span></summary>
+      <div class="settings-body">
+        <div class="field"><span class="label">Stadt</span><div class="citylist" id="cityList"></div>
+          <p class="hint">Normale Nutzer bekommen automatisch die Stadt, in der sie gerade sind.</p></div>
+        <label class="toggle" id="simRow"><span>Simulationsmodus<small>Deine Position wird simuliert, per Tipp auf die Karte kannst du sie versetzen.</small></span><input type="checkbox" id="simToggle"></label>
+        <div class="field" id="devRoutingRow">
+          <span class="label">Routing-Server</span>
           <input type="url" id="devRouting" class="textin" placeholder="https://…trycloudflare.com" autocomplete="off" autocapitalize="off" spellcheck="false">
           <p class="hint">Leer = FOSSGIS-Dienst. Eigener Valhalla-Server: siehe server/README.md im Repo.</p>
         </div>
@@ -547,10 +554,24 @@ function twoOpt(seq,start,mode,loop){
   }
   return best;
 }
-function scoreOf(s,themes){ const ov=s.themes.filter(t=>themes.includes(t)).length; return ov? ov*3+s.prio*2 : 0; }
+/* Priorität der Stadt: 3 = Top-Highlight (soll auf möglichst jeder Tour sein), 2 = sehenswert, 1 = Extra */
+const PRIO_W={3:6,2:2,1:0.5};
+function scoreOf(s,themes){
+  const ov=s.themes.filter(t=>themes.includes(t)).length;
+  if(!ov && (s.prio||1)<3) return 0;                    // Highlights kommen auch ohne passendes Thema in Frage
+  return ov*6 + PRIO_W[s.prio||1];
+}
 function planTour({start,mode,minutes,themes,loop}){
   const cands=CITY.stops.filter(s=>scoreOf(s,themes)>0);
   let seq=[];
+  const insertCheapest=(s,limit)=>{ let best=null;
+    for(let i=0;i<=seq.length;i++){ const trial=[...seq.slice(0,i),s,...seq.slice(i)], t=tourTime(trial,start,mode,loop);
+      if(t<=limit && (!best||t<best.t)) best={trial,t}; }
+    if(best) seq=twoOpt(best.trial,start,mode,loop); return !!best; };
+  // Phase 1: die Highlights der Stadt in ihrer Rangfolge (CITY.highlights) – solange sie in ~70 % der Zeit passen.
+  const ranking=(CITY.highlights||CITY.stops.filter(s=>(s.prio||1)>=3).map(s=>s.id)).map(id=>CITY.stops.find(s=>s.id===id)).filter(Boolean);
+  for(const s of ranking) insertCheapest(s,minutes*0.7);
+  // Phase 2: mit Stopps zu deinen Themen (und weiteren Highlights) bis zur vollen Zeit auffüllen.
   for(;;){
     const base=tourTime(seq,start,mode,loop); let best=null;
     for(const s of cands){
@@ -558,7 +579,8 @@ function planTour({start,mode,minutes,themes,loop}){
       for(let i=0;i<=seq.length;i++){
         const trial=[...seq.slice(0,i),s,...seq.slice(i)], t=tourTime(trial,start,mode,loop);
         if(t>minutes) continue;
-        const ratio=scoreOf(s,themes)/Math.max(t-base,1);
+        // Aufenthaltszeit zählt nur teilweise als „Kosten“ – große Stopps mit langem Aufenthalt sollen nicht benachteiligt werden
+        const ratio=scoreOf(s,themes)/Math.max(t-base-0.7*dwellOf(s,mode),1);
         if(!best||ratio>best.ratio) best={trial,ratio};
       }
     }
@@ -646,13 +668,37 @@ function mergeLegs(raw,specs){
   });
 }
 /* Schönste statt schnellste Route: Zwischenpunkte an Sehenswürdigkeiten am Wegesrand einbauen */
+function projOnSeg(p,a,b){ // Lage von p relativ zur Strecke a→b: t (0..1 = zwischen a und b), d = Abstand in Metern
+  const kx=Math.cos(rad(a[0]))*111320, ky=110540;
+  const bx=(b[1]-a[1])*kx, by=(b[0]-a[0])*ky, px=(p[1]-a[1])*kx, py=(p[0]-a[0])*ky, L=bx*bx+by*by||1;
+  return {t:(px*bx+py*by)/L, d:Math.abs(px*by-py*bx)/Math.sqrt(L)};
+}
+/* Doppelt gelaufene Strecken finden (gleiches Wegstück mehrfach, egal in welcher Richtung) */
+function doubledMeters(legs){
+  const key=(p,q)=>{ const a=p[0].toFixed(5)+','+p[1].toFixed(5), b=q[0].toFixed(5)+','+q[1].toFixed(5); return a<b? a+'|'+b : b+'|'+a; };
+  const cnt=new Map();
+  legs.forEach(l=>{ for(let k=1;k<l.pts.length;k++){ const kk=key(l.pts[k-1],l.pts[k]); cnt.set(kk,(cnt.get(kk)||0)+1); } });
+  return legs.map(l=>{ let m=0; for(let k=1;k<l.pts.length;k++) if(cnt.get(key(l.pts[k-1],l.pts[k]))>1) m+=dist(l.pts[k-1],l.pts[k]); return m; });
+}
+/* Route berechnen; Umwege, die zu doppelt gelaufenen Strecken führen, wieder herausnehmen */
+async function routeScenic(origin,targets,mode,slackMin,exclude){
+  let specs=chooseVias(origin,targets,mode,slackMin,exclude);
+  let res=await routeSpecs(origin,specs,mode);
+  for(let round=0; round<2 && res.ok; round++){
+    const dbl=doubledMeters(res.legs); let changed=false;
+    specs=specs.map((sp,i)=>{ if(sp.vias.length && dbl[i]>40){ changed=true; return {...sp, vias:sp.vias.slice(0,-1)}; } return sp; });
+    if(!changed) break;
+    res=await routeSpecs(origin,specs,mode);
+  }
+  return res;
+}
 function chooseVias(origin,targets,mode,slackMin,exclude=new Set()){
   const inTour=new Set(targets.filter(t=>t.stop).map(t=>t.stop.id));
   const pool=[...CITY.wayside.map(w=>({p:w,val:1})), ...CITY.stops.filter(x=>!inTour.has(x.id)).map(x=>({p:x,val:1.4}))]
     .filter(c=>!exclude.has(c.p.id));
   const specs=targets.map(t=>({target:t,vias:[]})), used=new Set();
   let slack=Math.max(0,slackMin)*SPEED[mode]/DETOUR;                       // Luftlinien-Meter, die wir „verschenken“ dürfen
-  const maxPerLeg=mode==='bike'?6:5;
+  const maxPerLeg=mode==='bike'?4:3;
   for(;;){
     let best=null;
     specs.forEach((sp,si)=>{
@@ -660,12 +706,15 @@ function chooseVias(origin,targets,mode,slackMin,exclude=new Set()){
       const from=si===0? origin : specs[si-1].target.ll;
       const chain=[from,...sp.vias.map(v=>v.ll),sp.target.ll];
       let len=0; for(let k=1;k<chain.length;k++) len+=dist(chain[k-1],chain[k]);
-      const direct=dist(from,sp.target.ll), cap=direct*(mode==='bike'?1.5:1.7)+180;
+      const direct=dist(from,sp.target.ll), cap=direct*(mode==='bike'?1.25:1.35)+120;
       for(const c of pool){
         if(used.has(c.p.id)) continue;
         for(let k=1;k<chain.length;k++){
           const a=chain[k-1], b=chain[k];
           if(dist(a,c.p.ll)<45||dist(b,c.p.ll)<45) continue;                // liegt eh direkt am Punkt
+          // Nur Punkte, die grob auf dem Weg liegen: kein Abstecher hin und wieder zurück
+          const seg=dist(a,b), pr=projOnSeg(c.p.ll,a,b);
+          if(pr.t<0.08||pr.t>0.92||pr.d>Math.max(70,seg*0.28)) continue;
           const add=dist(a,c.p.ll)+dist(c.p.ll,b)-dist(a,b);
           if(add>slack||len+add>cap) continue;
           const r=c.val/(add+60);
@@ -923,9 +972,8 @@ function bindSeg(id,key,onChange){
 function initPlanUI(){
   bindSeg('#segStart','startKind',v=>{ $('#startHint').hidden=v!=='pick'; const st=CITY.starts.find(x=>x.id===v);
     if(st){ setStart(st.ll); map&&map.flyTo({center:[st.ll[1],st.ll[0]],zoom:14.6}); } if(v==='me') locateOnce(true); });
-  $('#cityBtn').onclick=()=>{ const l=$('#cityList'); l.hidden=!l.hidden; $('#cityBtn').setAttribute('aria-expanded',String(!l.hidden)); if(!l.hidden) renderCityList(); positionLocate(); };
   let taps=[]; $('#planTitle').addEventListener('click',()=>{ const now=Date.now(); taps=[...taps.filter(t=>now-t<3000),now];
-    if(taps.length>=7){ taps=[]; state.dev=!state.dev; store.set('dev',state.dev); applyDev(); notice(state.dev?'Entwicklermodus an: Simulationsmodus ist in der Planung verfügbar.':'Entwicklermodus aus.'); } });
+    if(taps.length>=7){ taps=[]; state.dev=!state.dev; store.set('dev',state.dev); applyDev(); notice(state.dev?'Entwicklermodus an: Stadtauswahl, Simulation und Routing-Server findest du unten unter „Entwickler“.':'Entwicklermodus aus.'); } });
   bindSeg('#segMode','mode');
   const tr=$('#timeRange'); tr.value=state.settings.minutes; $('#timeVal').textContent=fmtMin(+tr.value);
   tr.addEventListener('input',()=>{ state.settings.minutes=+tr.value; $('#timeVal').textContent=fmtMin(+tr.value); saveSettings(); });
@@ -985,18 +1033,18 @@ function renderCityUI(){
     b.onclick=()=>{ const on=state.settings.themes.includes(t.id); state.settings.themes=on? state.settings.themes.filter(x=>x!==t.id) : [...state.settings.themes,t.id];
       b.setAttribute('aria-pressed',String(!on)); saveSettings(); };
     chips.appendChild(b); });
-  $('#cityList').hidden=true; $('#cityBtn').setAttribute('aria-expanded','false');
+  renderCityList();
   updateMini();
 }
 function renderCityList(){
   const l=$('#cityList');
   l.innerHTML=CITIES.map(c=>{ const d=state.pos&&!state.settings.sim? dist(state.pos,c.center) : null;
     return `<button type="button" data-id="${esc(c.id)}" aria-current="${CITY&&c.id===CITY.id}"><span><b>${esc(c.name)}</b><br><span>${esc(c.tagline||'')}</span></span><span>${d!=null? fmtDist(d) : ''}</span></button>`; }).join('')
-    + (CITIES.length<2? '<div class="more">Weitere Städte folgen.</div>' : '');
-  l.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.dataset.id!==CITY.id) selectCity(b.dataset.id); else { l.hidden=true; positionLocate(); } });
+    ;
+  l.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.dataset.id!==CITY.id) selectCity(b.dataset.id); });
 }
 function applyDev(){
-  $('#simRow').hidden=!state.dev; $('#devRoutingRow').hidden=!state.dev;
+  $('#devSection').hidden=!state.dev;
   if(!state.dev && state.settings.sim) setSimMode(false,false);
 }
 
@@ -1040,7 +1088,7 @@ async function doPlan(){
     if(s.startKind==='pick' && !state.pickLL){ notice('Tippe zuerst auf die Karte, um den Startpunkt zu setzen.'); return; }
     if(!state.start) setStart(CITY.starts[0].ll);
     await wikiReady;
-    const start=state.start, SCENIC=0.85;   // 15 % der Zeit bleiben für Umwege zu Sehenswertem am Wegesrand
+    const start=state.start, SCENIC=0.9;   // 10 % der Zeit bleiben für kleine Umwege zu Sehenswertem am Wegesrand
     let seq=planTour({start,mode:s.mode,minutes:s.minutes*SCENIC,themes:s.themes,loop:s.loop});
     if(!seq.length) seq=planTour({start,mode:s.mode,minutes:s.minutes,themes:s.themes,loop:s.loop});
     if(!seq.length){ notice('In dieser Zeit ist kein passender Stopp erreichbar. Wähle mehr Zeit oder andere Themen.',6000); return; }
@@ -1049,7 +1097,7 @@ async function doPlan(){
       const targets=seq.map(st=>({name:st.name,ll:st.ll,stop:st}));
       if(s.loop) targets.push({name:'Zurück zum Start',ll:start,home:true});
       const slack=s.minutes-tourTime(seq,start,s.mode,s.loop);
-      res=await routeSpecs(start,chooseVias(start,targets,s.mode,slack),s.mode);
+      res=await routeScenic(start,targets,s.mode,slack);
       const meters=res.legs.reduce((a,l)=>a+l.distance,0);
       total=travelMin(res.legs,s.mode)+seq.reduce((a,st)=>a+dwellOf(st,s.mode),0);
       if(total<=s.minutes*1.1 || seq.length<=1 || tries>=4) break;
@@ -1075,7 +1123,7 @@ function renderPreview(total){
     : `Davon ca. ${fmtDist(pm)} durch Fußgängerzonen. Dort musst du absteigen und schieben, die Route ist gelb markiert und die Zeit ist mit Gehtempo eingerechnet.`;
   const ol=$('#pvList'); ol.innerHTML='';
   state.tour.forEach((st,i)=>{ const li=document.createElement('li');
-    li.innerHTML=`<span class="num">${i+1}</span><span class="t"><b>${esc(st.name)}</b><span>${esc(st.teaser)}</span></span><span class="m">${dwellOf(st,s.mode)} min</span>`;
+    li.innerHTML=`<span class="num">${i+1}</span><span class="t"><b>${esc(st.name)}${(st.prio||1)>=3?' <i class="hl">Highlight</i>':''}</b><span>${esc(st.teaser)}</span></span><span class="m">${dwellOf(st,s.mode)} min</span>`;
     li.onclick=()=>openStory(st,{mode:'preview'}); ol.appendChild(li); });
   positionLocate();
 }
@@ -1256,7 +1304,7 @@ async function reroute(){
   const nav=state.nav; if(!nav||!state.pos) return;
   const btn=$('#rerouteBtn'); btn.disabled=true; btn.textContent='Berechne neu …';
   const targets=state.legs.slice(nav.legIdx).map(l=>l.target);
-  const res=await routeSpecs(state.pos,chooseVias(state.pos,targets,state.settings.mode,12,nav.told),state.settings.mode);
+  const res=await routeScenic(state.pos,targets,state.settings.mode,8,nav.told);
   state.legs.splice(nav.legIdx,state.legs.length-nav.legIdx,...res.legs);
   nav.stepIdx=0; nav.off=0; if(state.sim){ state.sim.dist=0; state.sim.teleported=false; }
   btn.hidden=true; btn.disabled=false; btn.textContent='Du bist von der Route abgekommen · Neu berechnen';
@@ -1468,9 +1516,19 @@ const consentReady=new Promise(res=>{
   $('#welcome').hidden=false;
   $('#welcomeOk').onclick=()=>{ store.set('consent_v1',true); $('#welcome').hidden=true; res(); };
 });
+/* Stadt automatisch am Standort erkennen (außer im Entwicklermodus mit Simulation) */
+async function detectCity(){
+  if(state.settings.sim) return;
+  try{
+    const ll=await getPosition(8000); setMe(ll);
+    const here=cityAt(ll);
+    if(here && here.id!==CITY.id && !state.nav){ await selectCity(here.id); }
+    if(!here && !state.dev && state.settings.startKind!=='me') notice(`Du bist gerade in keiner Stadt, für die es schon Touren gibt. Die Tour durch ${CITY.name} kannst du dir trotzdem ansehen.`,7000);
+  }catch(e){ /* kein Standort: zuletzt genutzte Stadt bleibt */ }
+}
 selectCity(state.settings.cityId).then(()=>{
   showView('viewPlan');
-  Promise.all([mapReady,consentReady]).then(()=>{ if(state.settings.startKind==='me') locateOnce(true); });
+  Promise.all([mapReady,consentReady]).then(async()=>{ await detectCity(); if(state.settings.startKind==='me') locateOnce(true); });
 });
 window.addEventListener('resize',positionLocate);
 if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});

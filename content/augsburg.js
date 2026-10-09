@@ -17,6 +17,9 @@
 ],
 
   intro:'Servus und willkommen in Augsburg! Diese Stadt ist über zweitausend Jahre alt, war einmal eine der reichsten Städte Europas und hat mehr Geschichten auf Lager, als in eine einzige Tour passen.',
+  /* Rangfolge der Top-Highlights: Die Tourplanung nimmt sie in dieser Reihenfolge auf, solange die Zeit reicht. */
+  highlights:['fuggerei','rathaus','perlach','augustus','ulrich','dom','lechviertel'],
+  /* prio: 3 = Top-Highlight (kommt auf möglichst jede Tour), 2 = sehenswert, 1 = Extra für längere Touren */
   stops:[
   { id:'rathaus', name:'Rathaus', wiki:'Augsburger Rathaus', ll:[48.3687,10.8986], themes:['geschichte','kultur'], prio:3, dwell:10,
     teaser:'Elias Holls Meisterwerk und das Herz der Reichsstadt.',
@@ -36,7 +39,7 @@
     fact:'Bis zur Aussichtsplattform sind es 258 Stufen. Einen Aufzug gibt es nicht, du verdienst dir den Ausblick also ehrlich.',
     look:'Das kleine Fenster unten am Turm. Dort erscheint am Michaelstag der Turamichele.' },
 
-  { id:'augustus', name:'Augustusbrunnen', wiki:'Augustusbrunnen', ll:[48.3684,10.8987], themes:['wasser','kultur','geschichte'], prio:2, dwell:5,
+  { id:'augustus', name:'Augustusbrunnen', wiki:'Augustusbrunnen', ll:[48.3684,10.8987], themes:['wasser','kultur','geschichte'], prio:3, dwell:5,
     teaser:'Der Stadtgründer in Bronze, umgeben von vier Flussgöttern.',
     story:[
       'Der Mann auf dem Sockel ist Kaiser Augustus persönlich, der Namensgeber der Stadt. Der Bildhauer Hubert Gerhard hat den Brunnen geschaffen, 1594 war er fertig.',
@@ -153,7 +156,7 @@
     fact:'Seit 2019 ist das Augsburger Wassermanagement-System UNESCO-Welterbe, mit insgesamt 22 Stationen von Kanälen über Wassertürme bis zu den Prachtbrunnen.',
     look:'Die schlanken Türme und das Rote Tor dahinter.' },
 
-  { id:'lechviertel', name:'Lechviertel & Stadtmetzg', wiki:'Stadtmetzg (Augsburg)', ll:[48.3666,10.8995], themes:['wasser','geschichte'], prio:2, dwell:8,
+  { id:'lechviertel', name:'Lechviertel & Stadtmetzg', wiki:'Stadtmetzg (Augsburg)', ll:[48.3666,10.8995], themes:['wasser','geschichte'], prio:3, dwell:8,
     teaser:'Rauschende Kanäle, alte Handwerker und eine Kühlung von 1609.',
     story:[
       'Hier unten, wo die Kanäle durch die Gassen rauschen, lebten früher die Handwerker: Gerber, Färber, Müller und Goldschmiede. Sie alle brauchten fließendes Wasser, als Antrieb, zum Waschen und zum Kühlen.',

@@ -29,11 +29,19 @@ daraus MP3s mit Microsoft-Neural-Stimmen Katja und Conrad (edge-tts) im Ordner `
 Fehlt eine Datei, spricht die Gerätestimme. Für die App-Store-Version auf den offiziellen Azure-Speech-Dienst wechseln.
 
 ## Neue Stadt hinzufügen
-1. `content/<id>.js` nach dem Muster von `content/augsburg.js` anlegen (Startpunkte, Themen, Stopps, Wegesrand, Viertel).
+1. `content/<id>.js` nach dem Muster von `content/augsburg.js` anlegen (Startpunkte, Themen, Highlight-Rangfolge, Stopps mit Priorität, Wegesrand, Viertel).
 2. In `content/cities.js` einen Eintrag ergänzen (Name, Untertitel, Mittelpunkt, Radius, Datei).
 3. Hochladen. GitHub erzeugt die Audios (`audio/manifest-<id>.json`), die App erkennt die Stadt am Standort
    oder man wählt sie oben im Menü aus. Geladen wird immer nur die Datei der gewählten Stadt.
 
 ## Entwicklermodus
-Sieben Mal schnell auf „Deine Stadtführung“ tippen (oder `?dev=1` an die Adresse hängen) blendet den
-Simulationsmodus ein. Normale Nutzer sehen ihn nicht.
+Sieben Mal schnell auf „Deine Stadtführung“ tippen (oder `?dev=1` an die Adresse hängen) blendet unten den Bereich
+„Entwickler“ ein: Stadtauswahl, Simulationsmodus und eigener Routing-Server. Normale Nutzer bekommen automatisch die
+Stadt, in der sie gerade sind.
+
+## Tourplanung
+1. Zuerst kommen die Top-Highlights der Stadt in ihrer Rangfolge (`highlights` in der Stadtdatei) auf die Tour, solange sie in etwa 70 % der Zeit passen.
+2. Dann wird mit Stopps zu den gewählten Themen aufgefüllt (Priorität 3/2/1 fließt mit ein).
+3. Etwa 10 % der Zeit bleiben für kleine Umwege zu Sehenswertem am Wegesrand – nur Punkte, die grob auf dem Weg liegen,
+   und jede Etappe höchstens ca. 1,35-mal so lang wie der direkte Weg. Führt ein Umweg dazu, dass Wegstücke doppelt
+   gelaufen werden, nimmt die App ihn wieder heraus.

@@ -13,6 +13,9 @@
     {id:'natur',         label:'Natur & Isar'},
   ],
   intro:'Servus und grüß Gott in München! Die Stadt ist über achthundert Jahre alt, war jahrhundertelang Residenz der Wittelsbacher und hat zu fast jeder Ecke eine Geschichte, die man sich beim Bier erzählt.',
+  /* Rangfolge der Top-Highlights: Die Tourplanung nimmt sie in dieser Reihenfolge auf, solange die Zeit reicht. */
+  highlights:['marienplatz','frauenkirche','viktualienmarkt','residenz','hofbraeuhaus','alterpeter'],
+  /* prio: 3 = Top-Highlight (kommt auf möglichst jede Tour), 2 = sehenswert, 1 = Extra für längere Touren */
   stops:[
   { id:'marienplatz', name:'Marienplatz und Neues Rathaus', wiki:'Neues Rathaus (München)', ll:[48.1376,11.5760], themes:['geschichte','kultur'], prio:3, dwell:10,
     teaser:'Das Herz der Stadt, mit Ritterturnier und tanzenden Schäfflern.',
@@ -32,7 +35,7 @@
     fact:'Die beiden Türme sind fast gleich hoch, rund 98,5 Meter. Der Nordturm ist nur 12 Zentimeter höher, nicht einen ganzen Meter, wie oft behauptet wird.',
     look:'Den Teufelstritt gleich hinter dem Hauptportal. Stell dich hinein und schau, ob du ein Fenster siehst.' },
 
-  { id:'alterpeter', name:'Alter Peter', wiki:'St. Peter (München)', ll:[48.1364,11.5758], themes:['kirchen','natur'], prio:2, dwell:10,
+  { id:'alterpeter', name:'Alter Peter', wiki:'St. Peter (München)', ll:[48.1364,11.5758], themes:['kirchen','natur'], prio:3, dwell:10,
     teaser:'Die älteste Pfarrkirche der Stadt und 306 Stufen zur Aussicht.',
     story:[
       'Die Peterskirche ist die älteste erwähnte Pfarrkirche Münchens, ihre Wurzeln reichen bis zu einer Mönchssiedlung auf dem kleinen Petersbergl zurück. Die Münchner nennen ihren Turm liebevoll den Alten Peter.',
@@ -59,7 +62,7 @@
     fact:'Der Altar liegt hier im Westen und nicht, wie in den meisten Kirchen, im Osten.',
     look:'Das Fenster im Altarbereich, durch das Egid Quirin Asam aus seinem Haus in die Kirche blicken konnte.' },
 
-  { id:'hofbraeuhaus', name:'Hofbräuhaus', wiki:'Hofbräuhaus am Platzl', ll:[48.1376,11.5799], themes:['bier','geschichte'], prio:2, dwell:10,
+  { id:'hofbraeuhaus', name:'Hofbräuhaus', wiki:'Hofbräuhaus am Platzl', ll:[48.1376,11.5799], themes:['bier','geschichte'], prio:3, dwell:10,
     teaser:'Vom herzoglichen Brauhaus zum berühmtesten Wirtshaus der Welt.',
     story:[
       '1589 gründete Herzog Wilhelm der Fünfte ein eigenes Brauhaus für den Hof. Gebraut wird hier am Platzl längst nicht mehr, die Brauerei zog Ende des 19. Jahrhunderts an den Stadtrand. 1897 wurde das Gebäude zum Wirtshaus umgebaut, nach dem Zweiten Weltkrieg wurde es originalgetreu wieder aufgebaut.',
