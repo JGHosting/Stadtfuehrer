@@ -23,3 +23,8 @@ Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit 
 - Als Web-App läuft die Standortverfolgung nur bei eingeschaltetem Bildschirm (die App hält ihn wach).
 - Die Stimme ist die eingebaute Gerätestimme.
 - Inhalte stehen direkt in `index.html` im Objekt `CITY`. Eine neue Stadt = ein neues Objekt mit gleicher Struktur.
+
+## KI-Stimme
+Die Vorlese-Texte stehen in `content/augsburg.js` und `content/phrases.js`. Beim Deploy erzeugt GitHub Actions
+daraus MP3s mit Microsoft-Neural-Stimmen (edge-tts) im Ordner `audio/` – nur für neue oder geänderte Texte.
+Fehlt eine Datei, spricht die Gerätestimme. Für die App-Store-Version auf den offiziellen Azure-Speech-Dienst wechseln.

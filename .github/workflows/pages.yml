@@ -18,6 +18,25 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: KI-Audios aus dem Cache holen
+        uses: actions/cache@v4
+        with:
+          path: audio
+          key: audio-${{ hashFiles('content/**', 'tools/**') }}
+          restore-keys: audio-
+      - name: KI-Audios erzeugen (nur neue oder geänderte Texte)
+        run: |
+          pip install --quiet "edge-tts>=7.2"
+          node tools/texts.mjs > texts.json
+          python tools/tts.py texts.json audio
+          ls audio | wc -l
+          du -sh audio
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
