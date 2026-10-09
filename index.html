@@ -52,7 +52,17 @@ button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid va
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-radius:22px 22px 0 0;box-shadow:var(--shadow);
   max-height:min(72vh,calc(100% - var(--safe-t) - 70px));overflow-y:auto;overscroll-behavior:contain;
   padding:8px 18px calc(18px + var(--safe-b));max-width:560px;margin:0 auto}
-.grip{width:38px;height:4px;border-radius:2px;background:var(--line);margin:2px auto 12px}
+.grip-area{position:sticky;top:-8px;z-index:2;margin:-8px -18px 4px;padding:10px 0 12px;background:var(--surface);cursor:grab;touch-action:none;border-radius:22px 22px 0 0}
+.grip{width:42px;height:5px;border-radius:3px;background:var(--line);margin:0 auto}
+.sheet{transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.sheet.dragging{transition:none}
+.sheet.collapsed{overflow:hidden;touch-action:none}
+.toggle small{display:block;font-size:12.5px;color:var(--muted);line-height:1.35;margin-top:2px}
+.sim-pill{display:inline-block;background:var(--gold);color:var(--surface);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:6px}
+.simbar{display:flex;gap:10px;align-items:center;border:1.5px dashed var(--gold);border-radius:14px;padding:8px}
+.simbar .lbl{font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;padding-left:4px}
+.simbar .seg{flex:1}
+.simbar>.btn{padding:9px 12px;font-size:14px}
 .eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
 h1,h2,h3{font-family:var(--f-read);text-wrap:balance;margin:0}
 h1{font-size:26px;line-height:1.15;font-weight:700}
@@ -188,7 +198,7 @@ details[open].settings summary::after{content:" ▴"}
 </button>
 
 <section id="sheet" class="sheet" aria-label="Tourplanung">
-  <div class="grip"></div>
+  <div class="grip-area" id="grip" role="button" aria-label="Menü ein- oder ausklappen" tabindex="0"><div class="grip"></div></div>
 
   <!-- PLAN -->
   <div id="viewPlan" class="view">
@@ -227,6 +237,7 @@ details[open].settings summary::after{content:" ▴"}
     </div>
 
     <label class="toggle"><span>Rundtour, zurück zum Startpunkt</span><input type="checkbox" id="loopToggle"></label>
+    <label class="toggle"><span>Simulationsmodus<small>Zum Testen ohne in Augsburg zu sein. Deine Position wird simuliert, per Tipp auf die Karte kannst du sie versetzen.</small></span><input type="checkbox" id="simToggle"></label>
 
     <button class="btn btn-primary" id="planBtn" type="button">Tour zusammenstellen</button>
 
@@ -253,7 +264,6 @@ details[open].settings summary::after{content:" ▴"}
     <p class="hint" id="pvWarn" hidden></p>
     <div class="btn-row">
       <button class="btn btn-primary" id="startBtn" type="button">Tour starten</button>
-      <button class="btn btn-secondary" id="simBtn" type="button">Probelauf simulieren</button>
     </div>
     <ol class="stoplist" id="pvList"></ol>
     <button class="btn btn-ghost" id="backBtn" type="button">Tour ändern</button>
@@ -283,6 +293,15 @@ details[open].settings summary::after{content:" ▴"}
     <div id="endConfirm" class="btn-row" hidden>
       <button class="btn btn-primary" id="endYes" type="button">Ja, Tour beenden</button>
       <button class="btn btn-secondary" id="endNo" type="button">Weiterlaufen</button>
+    </div>
+    <div class="simbar" id="simBar" hidden>
+      <span class="lbl">Simulation</span>
+      <button class="btn btn-secondary" id="simPause" type="button">❚❚ Pause</button>
+      <div class="seg" id="simSpeed">
+        <button type="button" data-v="1">1×</button>
+        <button type="button" data-v="5">5×</button>
+        <button type="button" data-v="20">20×</button>
+      </div>
     </div>
     <p class="hint" id="navHint"></p>
   </div>
@@ -635,7 +654,7 @@ function notice(msg,ms=4500){ const n=$('#notice'); n.textContent=msg; n.hidden=
    Zustand & Einstellungen
    ===================================================================== */
 const DEFAULTS = {startKind:'rathaus', mode:'walk', minutes:120, themes:['geschichte','fugger','wasser'], loop:true,
-                  autoplay:true, wayside:true, turns:true, rate:1, audio:true};
+                  autoplay:true, wayside:true, turns:true, rate:1, audio:true, sim:false, simSpeed:'5'};
 const state = {
   settings: Object.assign({}, DEFAULTS, store.get('settings', {})),
   start:null, pickLL:null, pos:null, tour:null, legs:null, nav:null, sim:null, watchId:null, wake:null, storyCtx:null
@@ -800,7 +819,8 @@ try{
              'line-dasharray':['match',['get','st'],'todo',['literal',[1.2,1.4]],['literal',[1,0]]]}});
     mapReadyResolve();
   });
-  map.on('click',e=>{ if(state.settings.startKind==='pick' && !state.nav && $('#viewPlan').hidden===false){ setStart([e.lngLat.lat,e.lngLat.lng]); } });
+  map.on('click',e=>onMapTap([e.lngLat.lat,e.lngLat.lng]));
+  map.on('dragstart',()=>{ follow=false; });
 }catch(e){ console.error(e); mapReadyResolve(); setTimeout(()=>notice('Die Karte konnte nicht geladen werden. Bitte Internetverbindung prüfen.',8000),300); }
 
 function el(cls,html=''){ const d=document.createElement('div'); d.className=cls; d.innerHTML=html; return d; }
@@ -841,15 +861,60 @@ function fitTour(){
   const b=new maplibregl.LngLatBounds();
   state.legs.forEach(l=>l.pts.forEach(p=>b.extend([p[1],p[0]])));
   if(state.start) b.extend([state.start[1],state.start[0]]);
-  const sh=$('#sheet').offsetHeight;
+  const sh=visibleSheet();
   map.fitBounds(b,{padding:{top:70,left:40,right:40,bottom:Math.min(sh+20,window.innerHeight*0.6)},duration:700,maxZoom:16.5});
 }
 
 /* =====================================================================
    UI: Planung
    ===================================================================== */
-function showView(id){ ['viewPlan','viewPreview','viewNav','viewDone'].forEach(v=>$('#'+v).hidden=(v!==id)); $('#sheet').scrollTop=0; positionLocate(); }
-function positionLocate(){ requestAnimationFrame(()=>{ $('#locateBtn').style.bottom=($('#sheet').offsetHeight+12)+'px'; }); }
+function showView(id){ ['viewPlan','viewPreview','viewNav','viewDone'].forEach(v=>$('#'+v).hidden=(v!==id)); $('#sheet').scrollTop=0; setSheet(false); }
+function visibleSheet(){ const sh=$('#sheet'); return sh.offsetHeight - (sheetCollapsed? collapseOffset():0); }
+function positionLocate(){ requestAnimationFrame(()=>{ $('#locateBtn').style.bottom=(visibleSheet()+12)+'px'; }); }
+
+/* ---------- Wischbares Menü ---------- */
+let sheetCollapsed=false;
+const PEEK=104;
+function collapseOffset(){ const sh=$('#sheet'); return Math.max(0, sh.offsetHeight-PEEK); }
+function setSheet(collapsed){
+  const sh=$('#sheet'); sheetCollapsed=collapsed;
+  if(collapsed) sh.scrollTop=0;
+  sh.classList.toggle('collapsed',collapsed);
+  sh.style.transform=collapsed? `translateY(${collapseOffset()}px)` : '';
+  setTimeout(positionLocate,320); positionLocate();
+}
+(function initSheetDrag(){
+  const sh=$('#sheet'); let y0=null, dragging=false, base=0, pid=null, startT=0, justDragged=false;
+  sh.addEventListener('pointerdown',e=>{
+    if(e.target.closest('input,select,textarea')) return;
+    y0=e.clientY; dragging=false; pid=e.pointerId; startT=performance.now();
+    base=sheetCollapsed? collapseOffset() : 0;
+  });
+  sh.addEventListener('pointermove',e=>{
+    if(y0==null||e.pointerId!==pid) return;
+    const dy=e.clientY-y0;
+    if(!dragging){
+      const onGrip=!!e.target.closest('#grip');
+      const canDown = dy>8 && (sh.scrollTop<=0||onGrip);
+      const canUp = dy<-8 && sheetCollapsed;
+      if(!(canDown||canUp)) { if(Math.abs(dy)>8) y0=null; return; }
+      dragging=true; sh.classList.add('dragging'); try{ sh.setPointerCapture(pid); }catch(_){}
+    }
+    e.preventDefault();
+    const t=Math.max(0, Math.min(collapseOffset(), base+dy));
+    sh.style.transform=`translateY(${t}px)`;
+  },{passive:false});
+  const end=e=>{
+    if(y0==null) return;
+    const dy=e.clientY-y0, fast=Math.abs(dy)/(performance.now()-startT)>0.5; y0=null;
+    if(!dragging) return;
+    dragging=false; sh.classList.remove('dragging'); justDragged=true; setTimeout(()=>justDragged=false,80);
+    if(dy>60||(fast&&dy>20)) setSheet(true); else if(dy<-60||(fast&&dy<-20)) setSheet(false); else setSheet(sheetCollapsed);
+  };
+  sh.addEventListener('pointerup',end); sh.addEventListener('pointercancel',end);
+  sh.addEventListener('click',e=>{ if(justDragged) return; if(e.target.closest('#grip')) setSheet(!sheetCollapsed); else if(sheetCollapsed && !e.target.closest('button')) setSheet(false); });
+  $('#grip').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); setSheet(!sheetCollapsed); } });
+})();
 function bindSeg(id,key,onChange){
   const seg=$(id);
   const sync=()=>seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===state.settings[key])));
@@ -868,7 +933,9 @@ function initPlanUI(){
       b.setAttribute('aria-pressed',String(!on)); saveSettings(); };
     chips.appendChild(b); });
   const ck=(id,key)=>{ const c=$(id); c.checked=!!state.settings[key]; c.onchange=()=>{ state.settings[key]=c.checked; saveSettings(); }; };
-  ck('#loopToggle','loop'); ck('#optAutoplay','autoplay'); ck('#optWayside','wayside'); ck('#optTurns','turns');
+  ck('#loopToggle','loop');
+  const st=$('#simToggle'); st.checked=!!state.settings.sim;
+  st.onchange=()=>setSimMode(st.checked,true); ck('#optAutoplay','autoplay'); ck('#optWayside','wayside'); ck('#optTurns','turns');
   const rate=$('#optRate'); rate.value=state.settings.rate; $('#rateVal').textContent=(+rate.value).toFixed(2).replace('.',',')+'×';
   rate.oninput=()=>{ state.settings.rate=+rate.value; $('#rateVal').textContent=(+rate.value).toFixed(2).replace('.',',')+'×'; saveSettings(); };
   $('#testVoice').onclick=()=>Speech.say('Servus! So klinge ich, wenn ich dir unterwegs Geschichten über Augsburg erzähle.');
@@ -883,12 +950,17 @@ function getPosition(timeout=9000){
     navigator.geolocation.getCurrentPosition(p=>res([p.coords.latitude,p.coords.longitude]),rej,{enableHighAccuracy:true,timeout,maximumAge:30000}); });
 }
 async function locateOnce(asStart){
+  if(state.settings.sim){
+    const ll=state.simPos||CITY.starts.rathaus.ll; state.simPos=ll; setMe(ll); if(asStart) setStart(ll);
+    follow=true; map&&map.flyTo({center:[ll[1],ll[0]],zoom:15.5});
+    return ll;
+  }
   try{
     const ll=await getPosition(); setMe(ll);
     if(dist(ll,CITY.center)>15000){
-      if(asStart){ setStart(CITY.starts.rathaus.ll); notice('Du bist gerade nicht in Augsburg. Start ist deshalb der Rathausplatz. Mit „Probelauf simulieren“ kannst du die Tour trotzdem testen.',7000); }
-      else notice('Du bist gerade nicht in Augsburg.');
-      return null;
+      setSimMode(true,false);
+      notice('Du bist gerade nicht in Augsburg. Ich habe den Simulationsmodus eingeschaltet: Du startest virtuell am Rathausplatz. Tippe auf die Karte, um deine Position zu versetzen.',8000);
+      return locateOnce(asStart);
     }
     if(asStart) setStart(ll);
     map&&map.flyTo({center:[ll[1],ll[0]],zoom:15.5});
@@ -970,7 +1042,8 @@ function arrowSVG(st){
 }
 
 async function startTour(simulate){
-  const s=state.settings;
+  const s=state.settings; follow=true;
+  $('#simBar').hidden=!simulate;
   state.nav={legIdx:0, stepIdx:0, visited:[], told:new Set(), zones:new Set(), announced:new Set(), off:0, t0:Date.now(), walked:0, last:null};
   showView('viewNav'); $('#banner').hidden=false; $('#endConfirm').hidden=true;
   drawRoute(); drawStopMarkers(); updateAudioBtn();
@@ -978,8 +1051,9 @@ async function startTour(simulate){
   const first=state.legs[0].target;
   Speech.say(`${CITY.intro} Ich nehme dich heute mit zu ${state.tour.length} Stationen. Unser erster Stopp: ${first.name}. ${fmtDist(state.legs[0].distance).replace('km','Kilometer').replace(' m',' Meter')} von hier.`,{tag:'intro'});
   if(simulate){
-    state.sim={dist:0, last:performance.now(), timer:setInterval(simTick,200)};
-    $('#navHint').textContent='Probelauf: Die App läuft die Route im Zeitraffer ab.';
+    state.sim={dist:0, paused:false, last:performance.now(), timer:setInterval(simTick,200)};
+    syncSimBar();
+    $('#navHint').textContent='Simulation: Du läufst die Route virtuell ab. Tippe auf die Karte, um dich woandershin zu versetzen.';
     setMe(state.legs[0].pts[0]); map&&map.flyTo({center:[state.legs[0].pts[0][1],state.legs[0].pts[0][0]],zoom:16.4});
     onPosition(state.legs[0].pts[0]);
   } else {
@@ -998,8 +1072,7 @@ function onPosition(ll,acc){
   setMe(ll);
   if(state.storyCtx&&state.storyCtx.mode==='arrival') return;
   const leg=state.legs[nav.legIdx]; if(!leg) return;
-  if(map&&!state.sim) map.easeTo({center:[ll[1],ll[0]],duration:600});
-  if(map&&state.sim&&Math.random()<0.15) map.easeTo({center:[ll[1],ll[0]],duration:800});
+  if(map&&follow){ if(state.sim) map.jumpTo({center:[ll[1],ll[0]]}); else map.easeTo({center:[ll[1],ll[0]],duration:600}); }
   // Manöver abhaken
   for(let k=nav.stepIdx+1;k<Math.min(leg.steps.length,nav.stepIdx+5);k++){
     if(dist(ll,llOfStep(leg.steps[k]))<16){ nav.stepIdx=k; }
@@ -1016,7 +1089,7 @@ function onPosition(ll,acc){
   // Unterwegs erzählen
   if(state.settings.wayside) checkWayside(ll);
   // Von der Route abgekommen?
-  if(!state.sim && leg.pts.length>1){
+  if((!state.sim||state.sim.teleported) && leg.pts.length>1){
     const off=distToLine(ll,leg.pts); nav.off = off>(acc&&acc>30?acc+30:55) ? nav.off+1 : 0;
     $('#rerouteBtn').hidden = nav.off<3;
   }
@@ -1101,7 +1174,7 @@ async function reroute(){
   const points=[state.pos,...targets.map(t=>t.ll)];
   const res=await routeLegs(points,targets,state.settings.mode);
   state.legs.splice(nav.legIdx,state.legs.length-nav.legIdx,...res.legs);
-  nav.stepIdx=0; nav.off=0; if(state.sim) state.sim.dist=0;
+  nav.stepIdx=0; nav.off=0; if(state.sim){ state.sim.dist=0; state.sim.teleported=false; }
   btn.hidden=true; btn.disabled=false; btn.textContent='Du bist von der Route abgekommen · Neu berechnen';
   if(!res.ok) notice('Routing gerade nicht erreichbar. Ich zeige dir die Luftlinie.');
   drawRoute(); updateNavUI();
@@ -1133,7 +1206,8 @@ function simTick(){
   if(state.storyCtx&&state.storyCtx.mode==='arrival') return;
   if(Speech.busy() && Speech.tag && Speech.tag.startsWith('story')) return;
   const leg=state.legs[nav.legIdx]; if(!leg) return;
-  const v=state.settings.mode==='bike'? 30 : 12; // m/s im Zeitraffer
+  if(sim.paused||sim.teleported) return;
+  const v=(state.settings.mode==='bike'? 4.5 : 1.4) * (+state.settings.simSpeed||5); // m/s
   sim.dist=Math.min(sim.dist+v*dt, leg.cum[leg.cum.length-1]);
   let k=1; while(k<leg.cum.length-1 && leg.cum[k]<sim.dist) k++;
   const a=leg.pts[k-1], b=leg.pts[k]||a, seg=(leg.cum[k]-leg.cum[k-1])||1, f=Math.min(1,Math.max(0,(sim.dist-leg.cum[k-1])/seg));
@@ -1195,15 +1269,46 @@ $('#endBtn').onclick=()=>{ $('#endConfirm').hidden=false; positionLocate(); };
 $('#endNo').onclick=()=>{ $('#endConfirm').hidden=true; positionLocate(); };
 $('#endYes').onclick=()=>finishTour();
 $('#rerouteBtn').onclick=reroute;
-$('#startBtn').onclick=()=>startTour(false);
-$('#simBtn').onclick=()=>startTour(true);
+$('#startBtn').onclick=()=>startTour(!!state.settings.sim);
+$('#simPause').onclick=()=>{ if(!state.sim) return; state.sim.paused=!state.sim.paused; state.sim.last=performance.now(); syncSimBar(); };
+$('#simSpeed').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; state.settings.simSpeed=b.dataset.v; saveSettings(); syncSimBar(); });
 $('#backBtn').onclick=()=>{ state.tour=null; state.legs=null; clearStopMarkers(); drawRoute(); showView('viewPlan'); };
 $('#againBtn').onclick=()=>{ state.tour=null; state.legs=null; clearStopMarkers(); drawRoute(); showView('viewPlan'); };
 $('#toastClose').onclick=()=>{ $('#toast').hidden=true; if(Speech.tag==='way') Speech.stop(); };
-$('#locateBtn').onclick=()=>locateOnce(false);
+$('#locateBtn').onclick=()=>{ follow=true; if(state.nav&&state.pos){ map&&map.flyTo({center:[state.pos[1],state.pos[0]],zoom:16.2}); } else locateOnce(false); };
+
+/* ---------- Simulationsmodus ---------- */
+let follow=true;
+function setSimMode(on,fromToggle){
+  state.settings.sim=on; saveSettings(); $('#simToggle').checked=on; updateStartLabel();
+  if(on){ if(!state.simPos) state.simPos=CITY.starts.rathaus.ll;
+    if(state.settings.startKind==='me'){ setStart(state.simPos); setMe(state.simPos); }
+    if(fromToggle) notice('Simulationsmodus an. Bei „Mein Standort“ startest du am Rathausplatz, per Tipp auf die Karte setzt du deine Position woandershin.',6000);
+  }
+}
+function updateStartLabel(){ $('#startBtn').textContent=state.settings.sim? 'Simulation starten' : 'Tour starten'; }
+function syncSimBar(){
+  if(!state.sim) return;
+  $('#simPause').textContent=state.sim.paused? '▶ Weiter' : '❚❚ Pause';
+  $('#simSpeed').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===String(state.settings.simSpeed))));
+}
+async function onMapTap(ll){
+  if(state.nav){
+    if(!state.sim) return;
+    state.sim.teleported=true; follow=true;
+    onPosition(ll);
+    if(!state.nav||(state.storyCtx&&state.storyCtx.mode==='arrival')) return;
+    notice('Position versetzt. Route wird neu berechnet …',2500);
+    await reroute();
+    return;
+  }
+  if($('#viewPlan').hidden) return;
+  if(state.settings.startKind==='pick'){ setStart(ll); return; }
+  if(state.settings.sim){ state.simPos=ll; setMe(ll); if(state.settings.startKind==='me') setStart(ll); else notice('Simulierte Position gesetzt. Wähle „Mein Standort“, um hier zu starten.'); }
+}
 
 /* Start */
-initPlanUI(); showView('viewPlan');
+initPlanUI(); updateStartLabel(); showView('viewPlan');
 wikiReady.then(()=>drawWaysideMarkers());
 mapReady.then(()=>{ if(state.settings.startKind==='me') locateOnce(true); });
 window.addEventListener('resize',positionLocate);
