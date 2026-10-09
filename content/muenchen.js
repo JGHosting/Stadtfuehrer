@@ -4,20 +4,20 @@
 (globalThis.CITY_DATA = globalThis.CITY_DATA || {}).muenchen = {
   id:'muenchen', name:'München', tagline:'erstmals erwähnt 1158', center:[48.1374,11.5755],
   starts:[ {id:'marienplatz', name:'Marienplatz', ll:[48.1372,11.5756]}, {id:'hbf', name:'Hauptbahnhof', ll:[48.1402,11.5600]}, {id:'odeonsplatz', name:'Odeonsplatz', ll:[48.1423,11.5774]} ],
-  themes:[
-    {id:'geschichte',    label:'Geschichte'},
-    {id:'wittelsbacher', label:'Könige & Wittelsbacher'},
-    {id:'kirchen',       label:'Kirchen'},
-    {id:'kultur',        label:'Kunst & Museen'},
-    {id:'bier',          label:'Bier & Märkte'},
-    {id:'natur',         label:'Natur & Isar'},
+  /* Kategorien: „Must-See“ enthält die bekanntesten Sehenswürdigkeiten. Jede Liste ist nach Berühmtheit sortiert –
+     die Tourplanung nimmt die vorderen Einträge zuerst. Ein Ort darf in mehreren Kategorien stehen. */
+  categories:[
+    {id:'mustsee',       label:'Must-See',               stops:['marienplatz','frauenkirche','viktualienmarkt','hofbraeuhaus','residenz','alterpeter']},
+    {id:'geschichte',    label:'Geschichte',             stops:['feldherrnhalle','siegestor','olympiapark','isartor','bavaria','friedensengel']},
+    {id:'wittelsbacher', label:'Könige & Wittelsbacher', stops:['residenz','nymphenburg','feldherrnhalle','theatiner','michaelskirche','hofgarten','glyptothek','monopteros']},
+    {id:'kirchen',       label:'Kirchen',                stops:['frauenkirche','alterpeter','asamkirche','theatiner','michaelskirche']},
+    {id:'kultur',        label:'Kunst & Museen',         stops:['deutschesmuseum','glyptothek','residenz','asamkirche','isartor']},
+    {id:'bier',          label:'Bier & Märkte',          stops:['hofbraeuhaus','viktualienmarkt','chinaturm','bavaria']},
+    {id:'natur',         label:'Natur & Isar',           stops:['eisbach','chinaturm','monopteros','olympiapark','hofgarten','friedensengel','nymphenburg']},
   ],
   intro:'Servus und grüß Gott in München! Die Stadt ist über achthundert Jahre alt, war jahrhundertelang Residenz der Wittelsbacher und hat zu fast jeder Ecke eine Geschichte, die man sich beim Bier erzählt.',
-  /* Rangfolge der Top-Highlights: Die Tourplanung nimmt sie in dieser Reihenfolge auf, solange die Zeit reicht. */
-  highlights:['marienplatz','frauenkirche','viktualienmarkt','residenz','hofbraeuhaus','alterpeter'],
-  /* prio: 3 = Top-Highlight (kommt auf möglichst jede Tour), 2 = sehenswert, 1 = Extra für längere Touren */
   stops:[
-  { id:'marienplatz', name:'Marienplatz und Neues Rathaus', wiki:'Neues Rathaus (München)', ll:[48.1376,11.5760], themes:['geschichte','kultur'], prio:3, dwell:10,
+  { id:'marienplatz', name:'Marienplatz und Neues Rathaus', wiki:'Neues Rathaus (München)', ll:[48.1376,11.5760], dwell:10,
     teaser:'Das Herz der Stadt, mit Ritterturnier und tanzenden Schäfflern.',
     story:[
       'Willkommen am Marienplatz, dem Herzen Münchens. Seinen Namen hat er erst seit 1854, vorher hieß er Schrannenplatz, nach dem Getreidemarkt, der hier stattfand. Die goldene Madonna auf der Mariensäule steht seit 1638 hier, zum Dank dafür, dass die schwedische Besatzung im Dreißigjährigen Krieg zu Ende ging.',
@@ -26,7 +26,7 @@
     fact:'Das Glockenspiel spielt täglich um 11 und um 12 Uhr, von März bis Oktober zusätzlich um 17 Uhr. Die Figuren an den vier Ecken der Mariensäule kämpfen gegen Krieg, Pest, Hunger und Ketzerei.',
     look:'Den kleinen goldenen Hahn ganz oben im Glockenspiel.' },
 
-  { id:'frauenkirche', name:'Frauenkirche', wiki:'Frauenkirche (München)', ll:[48.1386,11.5736], themes:['kirchen','geschichte'], prio:3, dwell:12,
+  { id:'frauenkirche', name:'Frauenkirche', wiki:'Frauenkirche (München)', ll:[48.1386,11.5736], dwell:12,
     teaser:'Zwei Zwiebeltürme, ein Teufelstritt und ein Baurekord.',
     story:[
       'Die Frauenkirche mit ihren zwei Türmen ist das Wahrzeichen Münchens. Baumeister Jörg von Halsbach begann 1468, schon 1488 standen die Türme. Ihre markanten Hauben bekamen sie aber erst 1525, als Renaissance-Kuppeln nach italienischem Vorbild.',
@@ -35,7 +35,7 @@
     fact:'Die beiden Türme sind fast gleich hoch, rund 98,5 Meter. Der Nordturm ist nur 12 Zentimeter höher, nicht einen ganzen Meter, wie oft behauptet wird.',
     look:'Den Teufelstritt gleich hinter dem Hauptportal. Stell dich hinein und schau, ob du ein Fenster siehst.' },
 
-  { id:'alterpeter', name:'Alter Peter', wiki:'St. Peter (München)', ll:[48.1364,11.5758], themes:['kirchen','natur'], prio:3, dwell:10,
+  { id:'alterpeter', name:'Alter Peter', wiki:'St. Peter (München)', ll:[48.1364,11.5758], dwell:10,
     teaser:'Die älteste Pfarrkirche der Stadt und 306 Stufen zur Aussicht.',
     story:[
       'Die Peterskirche ist die älteste erwähnte Pfarrkirche Münchens, ihre Wurzeln reichen bis zu einer Mönchssiedlung auf dem kleinen Petersbergl zurück. Die Münchner nennen ihren Turm liebevoll den Alten Peter.',
@@ -44,7 +44,7 @@
     fact:'Auf jeder Turmseite gibt es zwei Uhren. Karl Valentin hatte dafür eine typisch münchnerische Erklärung: Damit zwei Leute gleichzeitig auf die Uhr schauen können.',
     look:'Die zwei Zifferblätter übereinander an jeder Turmseite.' },
 
-  { id:'viktualienmarkt', name:'Viktualienmarkt', wiki:'Viktualienmarkt', ll:[48.1351,11.5763], themes:['bier','kultur'], prio:3, dwell:15,
+  { id:'viktualienmarkt', name:'Viktualienmarkt', wiki:'Viktualienmarkt', ll:[48.1351,11.5763], dwell:15,
     teaser:'Münchens Bauch, mit Maibaum, Biergarten und Volkssänger-Brunnen.',
     story:[
       'Seit 1807 wird hier gehandelt. Damals ließ König Max der Erste Joseph einen Teil des Marktes vom überfüllten Marienplatz hierher verlegen. Heute verkaufen mehr als hundert Händler Obst, Käse, Blumen und Spezialitäten aus aller Welt.',
@@ -53,7 +53,7 @@
     fact:'Die Figur am Karl-Valentin-Brunnen wurde teilweise aus der Bronze eines Löwen vom Siegestor gegossen, der im Zweiten Weltkrieg beschädigt worden war.',
     look:'Den Karl-Valentin-Brunnen. Oft steckt jemand der Figur eine frische Blume in die Hand.' },
 
-  { id:'asamkirche', name:'Asamkirche', wiki:'Asamkirche (München)', ll:[48.1350,11.5697], themes:['kirchen','kultur'], prio:2, dwell:8,
+  { id:'asamkirche', name:'Asamkirche', wiki:'Asamkirche (München)', ll:[48.1350,11.5697], dwell:8,
     teaser:'Eine private Barockkirche, so schmal wie ein Wohnhaus.',
     story:[
       'Von außen übersieht man sie fast, sie ist kaum breiter als die Nachbarhäuser. Doch drinnen explodiert der Barock. Die Brüder Egid Quirin und Cosmas Damian Asam bauten diese Kirche ab 1733 als ihre ganz private Kapelle, ohne Auftraggeber, der ihnen reinredet.',
@@ -62,7 +62,7 @@
     fact:'Der Altar liegt hier im Westen und nicht, wie in den meisten Kirchen, im Osten.',
     look:'Das Fenster im Altarbereich, durch das Egid Quirin Asam aus seinem Haus in die Kirche blicken konnte.' },
 
-  { id:'hofbraeuhaus', name:'Hofbräuhaus', wiki:'Hofbräuhaus am Platzl', ll:[48.1376,11.5799], themes:['bier','geschichte'], prio:3, dwell:10,
+  { id:'hofbraeuhaus', name:'Hofbräuhaus', wiki:'Hofbräuhaus am Platzl', ll:[48.1376,11.5799], dwell:10,
     teaser:'Vom herzoglichen Brauhaus zum berühmtesten Wirtshaus der Welt.',
     story:[
       '1589 gründete Herzog Wilhelm der Fünfte ein eigenes Brauhaus für den Hof. Gebraut wird hier am Platzl längst nicht mehr, die Brauerei zog Ende des 19. Jahrhunderts an den Stadtrand. 1897 wurde das Gebäude zum Wirtshaus umgebaut, nach dem Zweiten Weltkrieg wurde es originalgetreu wieder aufgebaut.',
@@ -71,7 +71,7 @@
     fact:'Stammgäste haben hier ihren eigenen Maßkrug, sicher verschlossen in einem von über 600 Krug-Tresoren. Die Tradition begann 1972, als die Gäste nicht von ihren Steinkrügen auf Glaskrüge umsteigen wollten.',
     look:'Die Wand mit den abgeschlossenen Krug-Tresoren der Stammgäste.' },
 
-  { id:'residenz', name:'Residenz', wiki:'Residenz (München)', ll:[48.1414,11.5781], themes:['wittelsbacher','kultur'], prio:3, dwell:10,
+  { id:'residenz', name:'Residenz', wiki:'Residenz (München)', ll:[48.1414,11.5781], dwell:10,
     teaser:'Deutschlands größtes Innenstadtschloss und Löwen, die Glück bringen.',
     story:[
       'Über 400 Jahre lang regierten die Wittelsbacher von hier aus Bayern, als Herzöge, Kurfürsten und schließlich Könige. Herausgekommen ist das größte Innenstadtschloss Deutschlands, mit über 150 Prunkräumen und zehn Innenhöfen.',
@@ -80,7 +80,7 @@
     fact:'Weil die Residenz über Jahrhunderte immer wieder erweitert wurde, findest du hier Renaissance, Barock, Rokoko und Klassizismus nebeneinander.',
     look:'Die blank geriebenen Stellen an den Schilden der Löwen.' },
 
-  { id:'feldherrnhalle', name:'Feldherrnhalle', wiki:'Feldherrnhalle', ll:[48.1420,11.5772], themes:['geschichte','wittelsbacher'], prio:2, dwell:8,
+  { id:'feldherrnhalle', name:'Feldherrnhalle', wiki:'Feldherrnhalle', ll:[48.1420,11.5772], dwell:8,
     teaser:'Florenz in München und eine Gasse für Drückeberger.',
     story:[
       'König Ludwig der Erste wollte ein Stück Italien in München. Friedrich von Gärtner baute ihm deshalb 1841 bis 1844 diese Halle nach dem Vorbild der Loggia dei Lanzi in Florenz. Sie ehrt das bayerische Heer, mit Statuen der Feldherren Tilly und Wrede.',
@@ -89,7 +89,7 @@
     fact:'Die beiden Löwen auf der Treppe kamen erst 1906 dazu, nach dem Vorbild der Medici-Löwen in Florenz.',
     look:'Die geschwungene bronzene Spur im Pflaster der Viscardigasse hinter der Halle.' },
 
-  { id:'theatiner', name:'Theatinerkirche', wiki:'Theatinerkirche', ll:[48.1424,11.5767], themes:['kirchen','wittelsbacher'], prio:2, dwell:8,
+  { id:'theatiner', name:'Theatinerkirche', wiki:'Theatinerkirche', ll:[48.1424,11.5767], dwell:8,
     teaser:'Ein Dankeschön in Gelb für einen Thronfolger.',
     story:[
       'Kurfürst Ferdinand Maria und seine Frau Henriette Adelaide von Savoyen warteten lange auf einen Erben. Als 1662 endlich Max Emanuel zur Welt kam, stifteten sie aus Dankbarkeit diese Kirche.',
@@ -98,7 +98,7 @@
     fact:'Die Theatinerkirche gilt als erste Barockkirche Bayerns.',
     look:'Die Farbe der Fassade am Nachmittag, wenn die Sonne darauf fällt.' },
 
-  { id:'hofgarten', name:'Hofgarten', wiki:'Hofgarten (München)', ll:[48.1428,11.5800], themes:['natur','wittelsbacher'], prio:1, dwell:8,
+  { id:'hofgarten', name:'Hofgarten', wiki:'Hofgarten (München)', ll:[48.1428,11.5800], dwell:8,
     teaser:'Der Schlossgarten der Residenz, mitten in der Stadt.',
     story:[
       'Der Hofgarten war der Garten der Residenz. Heute ist er ein ruhiger Ort mitten in der Stadt, mit Kieswegen, Brunnen und Linden.',
@@ -107,7 +107,7 @@
     fact:'Der Dianatempel in der Mitte stammt aus dem frühen 17. Jahrhundert. Ganz oben auf der Kuppel steht eine Bronzefigur der Tellus Bavarica, eine frühe Verkörperung Bayerns.',
     look:'Stell dich unter die Kuppel des Dianatempels und sag etwas. Hör, wie es klingt.' },
 
-  { id:'eisbach', name:'Eisbachwelle', wiki:'Eisbachwelle', ll:[48.1435,11.5877], themes:['natur'], prio:2, dwell:10,
+  { id:'eisbach', name:'Eisbachwelle', wiki:'Eisbachwelle', ll:[48.1435,11.5877], dwell:10,
     teaser:'Surfen mitten in der Großstadt.',
     story:[
       'Mitten in München, Hunderte Kilometer vom nächsten Meer entfernt, stehen Menschen mit Surfbrettern Schlange. Die stehende Welle im Eisbach entstand in den 1970er Jahren durch Einbauten im Bach, und seitdem wird hier gesurft.',
@@ -116,7 +116,7 @@
     fact:'Die Welle liegt am Südrand des Englischen Gartens, direkt beim Haus der Kunst.',
     look:'Wie die Surfer sich am Ufer anstellen und abwechseln.' },
 
-  { id:'chinaturm', name:'Chinesischer Turm', wiki:'Chinesischer Turm (München)', ll:[48.1527,11.5921], themes:['natur','bier'], prio:2, dwell:15,
+  { id:'chinaturm', name:'Chinesischer Turm', wiki:'Chinesischer Turm (München)', ll:[48.1527,11.5921], dwell:15,
     teaser:'Pagode im Park und einer der größten Biergärten der Stadt.',
     story:[
       'Der Englische Garten entstand ab 1789 auf Anregung von Benjamin Thompson, später Graf Rumford. Mit 3,7 Quadratkilometern gehört er zu den größten Stadtparks der Welt.',
@@ -125,7 +125,7 @@
     fact:'Der Turm brannte im Zweiten Weltkrieg ab und wurde danach originalgetreu wieder aufgebaut.',
     look:'Die Musikerempore im ersten Stock des Turms.' },
 
-  { id:'monopteros', name:'Monopteros', wiki:'Monopteros (München)', ll:[48.1494,11.5888], themes:['natur','wittelsbacher'], prio:1, dwell:8,
+  { id:'monopteros', name:'Monopteros', wiki:'Monopteros (München)', ll:[48.1494,11.5888], dwell:8,
     teaser:'Ein griechischer Tempel mit Blick auf die Türme der Altstadt.',
     story:[
       'Auf einem künstlich aufgeschütteten Hügel steht ein kleiner Rundtempel im griechischen Stil. Entworfen hat ihn Leo von Klenze, der Lieblingsarchitekt König Ludwigs des Ersten, fertig war er 1836.',
@@ -134,7 +134,7 @@
     fact:'Der Hügel ist nicht natürlich, er wurde extra für den Tempel aufgeschüttet.',
     look:'Die Türme der Frauenkirche am Horizont.' },
 
-  { id:'siegestor', name:'Siegestor', wiki:'Siegestor', ll:[48.1524,11.5820], themes:['geschichte'], prio:1, dwell:5,
+  { id:'siegestor', name:'Siegestor', wiki:'Siegestor', ll:[48.1524,11.5820], dwell:5,
     teaser:'Ein Triumphbogen mit einer Botschaft an die Zukunft.',
     story:[
       'Das Siegestor bildet den Abschluss der Ludwigstraße. Friedrich von Gärtner baute es 1843 bis 1850 nach dem Vorbild des Konstantinsbogens in Rom. Oben thront die Bavaria auf einem Wagen, der von vier Löwen gezogen wird.',
@@ -143,7 +143,7 @@
     fact:'Die restaurierte Quadriga kam erst 1972 wieder auf das Tor zurück, im Jahr der Olympischen Spiele.',
     look:'Die Inschrift auf der Südseite, Richtung Innenstadt.' },
 
-  { id:'glyptothek', name:'Königsplatz und Glyptothek', wiki:'Glyptothek', ll:[48.1462,11.5658], themes:['kultur','wittelsbacher'], prio:2, dwell:10,
+  { id:'glyptothek', name:'Königsplatz und Glyptothek', wiki:'Glyptothek', ll:[48.1462,11.5658], dwell:10,
     teaser:'Ludwigs Griechenland-Traum mitten in München.',
     story:[
       'König Ludwig der Erste schwärmte für die Antike. Leo von Klenze gestaltete ihm deshalb den Königsplatz wie ein antikes Forum, mit Säulen, Tempelfronten und viel Raum.',
@@ -152,7 +152,7 @@
     fact:'Die Glyptothek war eines der ersten Museen überhaupt, die nur für antike Skulpturen gebaut wurden.',
     look:'Die Tempelfront der Glyptothek auf der Nordseite des Platzes.' },
 
-  { id:'michaelskirche', name:'St. Michael', wiki:'St. Michael (München)', ll:[48.1389,11.5703], themes:['kirchen','wittelsbacher'], prio:2, dwell:10,
+  { id:'michaelskirche', name:'St. Michael', wiki:'St. Michael (München)', ll:[48.1389,11.5703], dwell:10,
     teaser:'Ein riesiges Gewölbe und das Grab von König Ludwig dem Zweiten.',
     story:[
       'Herzog Wilhelm der Fünfte ließ die Jesuitenkirche St. Michael von 1583 bis 1597 bauen. Sie gilt als erste Renaissancekirche Deutschlands.',
@@ -161,7 +161,7 @@
     fact:'An der Fassade kämpft der Erzengel Michael gegen das Böse. In Augsburg begegnet dir dasselbe Motiv am Zeughaus.',
     look:'Den Erzengel Michael zwischen den beiden Portalen.' },
 
-  { id:'isartor', name:'Isartor', wiki:'Isartor', ll:[48.1353,11.5822], themes:['geschichte','kultur'], prio:1, dwell:5,
+  { id:'isartor', name:'Isartor', wiki:'Isartor', ll:[48.1353,11.5822], dwell:5,
     teaser:'Ein mittelalterliches Stadttor mit einem Museum für Karl Valentin.',
     story:[
       'Das Isartor ist eines der erhaltenen Tore der mittelalterlichen Stadtmauer. Durch dieses Tor kamen früher Händler und Reisende von der Isar her in die Stadt.',
@@ -170,7 +170,7 @@
     fact:'Das Museum schreibt sich absichtlich Musäum, ganz im Sinne von Karl Valentin.',
     look:'Das Wandbild an der Torseite.' },
 
-  { id:'deutschesmuseum', name:'Deutsches Museum', wiki:'Deutsches Museum', ll:[48.1299,11.5834], themes:['kultur'], prio:2, dwell:10,
+  { id:'deutschesmuseum', name:'Deutsches Museum', wiki:'Deutsches Museum', ll:[48.1299,11.5834], dwell:10,
     teaser:'Eines der größten Technikmuseen der Welt, auf einer Insel.',
     story:[
       'Oskar von Miller gründete das Deutsche Museum 1903. Der große Bau auf der Museumsinsel in der Isar wurde 1925 eröffnet, an Millers 70. Geburtstag.',
@@ -179,7 +179,7 @@
     fact:'Jedes Jahr kommen rund anderthalb Millionen Besucher.',
     look:'Den Turm des Museums, der weit über die Isar zu sehen ist.' },
 
-  { id:'olympiapark', name:'Olympiapark', wiki:'Olympiapark (München)', ll:[48.1731,11.5466], themes:['natur','geschichte'], prio:2, dwell:15,
+  { id:'olympiapark', name:'Olympiapark', wiki:'Olympiapark (München)', ll:[48.1731,11.5466], dwell:15,
     teaser:'Ein Zeltdach, das die Architektur verändert hat.',
     story:[
       'Für die Olympischen Spiele 1972 entstand hier auf dem ehemaligen Flugfeld Oberwiesenfeld ein ganzer Park. Das berühmte Zeltdach aus Seilnetzen und Acrylglas entwarfen Frei Otto und Günter Behnisch. Es sollte leicht und offen wirken, das Gegenbild zu den Spielen von 1936.',
@@ -188,7 +188,7 @@
     fact:'Der Olympiaberg ist ein Trümmerberg: Nach dem Zweiten Weltkrieg wurden hier Trümmer der zerstörten Stadt aufgeschüttet.',
     look:'Wie das Zeltdach scheinbar schwerelos über dem Stadion schwebt.' },
 
-  { id:'nymphenburg', name:'Schloss Nymphenburg', wiki:'Schloss Nymphenburg', ll:[48.1583,11.5033], themes:['wittelsbacher','natur'], prio:2, dwell:15,
+  { id:'nymphenburg', name:'Schloss Nymphenburg', wiki:'Schloss Nymphenburg', ll:[48.1583,11.5033], dwell:15,
     teaser:'Ein Sommerschloss als Geburtsgeschenk und Geburtsort des Märchenkönigs.',
     story:[
       'Auch Schloss Nymphenburg verdankt seine Existenz der Geburt von Max Emanuel 1662. Ab 1664 entstand hier eine Sommerresidenz für die Kurfürstenfamilie, später wurde sie zu dieser riesigen Anlage ausgebaut.',
@@ -197,7 +197,7 @@
     fact:'Die Theatinerkirche am Odeonsplatz und dieses Schloss haben denselben Anlass: die lang ersehnte Geburt des Thronfolgers Max Emanuel.',
     look:'Den langen Kanal vor dem Schloss mit den Schwänen.' },
 
-  { id:'friedensengel', name:'Friedensengel', wiki:'Friedensengel (München)', ll:[48.1442,11.5964], themes:['geschichte','natur'], prio:1, dwell:6,
+  { id:'friedensengel', name:'Friedensengel', wiki:'Friedensengel (München)', ll:[48.1442,11.5964], dwell:6,
     teaser:'Ein goldener Engel hoch über der Isar.',
     story:[
       'Hoch über dem Isarhochufer steht auf einer Säule ein vergoldeter Engel. Das Denkmal entstand Ende des 19. Jahrhunderts und erinnert an die Friedensjahre nach dem Krieg von 1870 und 1871.',
@@ -206,7 +206,7 @@
     fact:'Errichtet wurde der Friedensengel zwischen 1896 und 1899, zum 25. Jahrestag des Friedens nach dem Krieg von 1870 und 1871.',
     look:'Den Blick vom Engel die Prinzregentenstraße hinunter.' },
 
-  { id:'bavaria', name:'Bavaria und Theresienwiese', wiki:'Bavaria (Statue)', ll:[48.1306,11.5446], themes:['geschichte','bier'], prio:1, dwell:10,
+  { id:'bavaria', name:'Bavaria und Theresienwiese', wiki:'Bavaria (Statue)', ll:[48.1306,11.5446], dwell:10,
     teaser:'Eine Riesin aus Bronze und der Platz des Oktoberfests.',
     story:[
       'Über der Theresienwiese wacht die Bavaria, fast 19 Meter hoch. Ludwig von Schwanthaler entwarf sie im Auftrag von König Ludwig dem Ersten, 1850 wurde sie enthüllt.',

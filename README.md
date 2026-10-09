@@ -40,8 +40,10 @@ Sieben Mal schnell auf „Deine Stadtführung“ tippen (oder `?dev=1` an die Ad
 Stadt, in der sie gerade sind.
 
 ## Tourplanung
-1. Zuerst kommen die Top-Highlights der Stadt in ihrer Rangfolge (`highlights` in der Stadtdatei) auf die Tour, solange sie in etwa 70 % der Zeit passen.
-2. Dann wird mit Stopps zu den gewählten Themen aufgefüllt (Priorität 3/2/1 fließt mit ein).
+Jede Stadt hat in ihrer Datei `categories`: zuerst **Must-See** mit den bekanntesten Sehenswürdigkeiten, dann weitere
+Kategorien (Geschichte, Kirchen, …). Jede Liste ist nach Berühmtheit sortiert.
+1. Must-See (wenn gewählt) kommen in ihrer Reihenfolge auf die Tour, solange sie in ca. 70 % der Zeit passen.
+2. Die anderen gewählten Kategorien im Reißverschluss: von jeder die berühmteste, dann die zweitberühmteste usw.
+   Stationen, für die man einen großen Umweg laufen müsste, werden übersprungen.
 3. Etwa 10 % der Zeit bleiben für kleine Umwege zu Sehenswertem am Wegesrand – nur Punkte, die grob auf dem Weg liegen,
-   und jede Etappe höchstens ca. 1,35-mal so lang wie der direkte Weg. Führt ein Umweg dazu, dass Wegstücke doppelt
-   gelaufen werden, nimmt die App ihn wieder heraus.
+   jede Etappe höchstens ca. 1,35-mal so lang wie der direkte Weg, und ohne doppelt gelaufene Wegstücke.

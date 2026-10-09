@@ -5,23 +5,22 @@
   id:'augsburg', name:'Augsburg', tagline:'gegründet 15 v. Chr.', center:[48.3687,10.8986],
   /* Startpunkte zur Auswahl (der erste ist Standard) */
   starts:[ {id:'rathaus', name:'Rathausplatz', ll:[48.3688,10.8986]}, {id:'hbf', name:'Hauptbahnhof', ll:[48.3655,10.8857]} ],
-  /* Themen dieser Stadt: id wird in stops[].themes verwendet */
-  themes:[
-  {id:'geschichte', label:'Geschichte'},
-  {id:'fugger',     label:'Fugger & Geld'},
-  {id:'wasser',     label:'Wasser & UNESCO'},
-  {id:'kirchen',    label:'Kirchen'},
-  {id:'kultur',     label:'Kunst & Kultur'},
-  {id:'promis',     label:'Berühmte Augsburger'},
-  {id:'natur',      label:'Natur & Aussicht'},
-],
+  /* Kategorien: „Must-See“ enthält die bekanntesten Sehenswürdigkeiten. Jede Liste ist nach Berühmtheit sortiert –
+     die Tourplanung nimmt die vorderen Einträge zuerst. Ein Ort darf in mehreren Kategorien stehen. */
+  categories:[
+    {id:'mustsee',    label:'Must-See',            stops:['fuggerei','rathaus','perlach','augustus','ulrich','dom','lechviertel']},
+    {id:'geschichte', label:'Geschichte',          stops:['fuggerhaeuser','fronhof','wassertuerme','synagoge','zeughaus','stadtmauer','lueginsland']},
+    {id:'fugger',     label:'Fugger & Geld',       stops:['fuggerei','fuggerhaeuser','anna','maxmuseum']},
+    {id:'wasser',     label:'Wasser & UNESCO',     stops:['lechviertel','augustus','herkules','wassertuerme','maxmuseum','eiskanal','hochablass']},
+    {id:'kirchen',    label:'Kirchen',             stops:['dom','ulrich','anna','synagoge']},
+    {id:'kultur',     label:'Kunst & Museen',      stops:['puppenkiste','schaezler','maxmuseum','tim','brecht','mozart','glaspalast']},
+    {id:'promis',     label:'Berühmte Augsburger', stops:['fuggerhaeuser','mozart','brecht','anna','schaezler']},
+    {id:'natur',      label:'Natur & Aussicht',    stops:['perlach','eiskanal','botgarten','hochablass','lueginsland','fronhof']},
+  ],
 
   intro:'Servus und willkommen in Augsburg! Diese Stadt ist über zweitausend Jahre alt, war einmal eine der reichsten Städte Europas und hat mehr Geschichten auf Lager, als in eine einzige Tour passen.',
-  /* Rangfolge der Top-Highlights: Die Tourplanung nimmt sie in dieser Reihenfolge auf, solange die Zeit reicht. */
-  highlights:['fuggerei','rathaus','perlach','augustus','ulrich','dom','lechviertel'],
-  /* prio: 3 = Top-Highlight (kommt auf möglichst jede Tour), 2 = sehenswert, 1 = Extra für längere Touren */
   stops:[
-  { id:'rathaus', name:'Rathaus', wiki:'Augsburger Rathaus', ll:[48.3687,10.8986], themes:['geschichte','kultur'], prio:3, dwell:10,
+  { id:'rathaus', name:'Rathaus', wiki:'Augsburger Rathaus', ll:[48.3687,10.8986], dwell:10,
     teaser:'Elias Holls Meisterwerk und das Herz der Reichsstadt.',
     story:[
       'Du stehst vor einem der bedeutendsten Renaissancebauten nördlich der Alpen. Zwischen 1615 und 1620 ließ die Reichsstadt Augsburg dieses Rathaus von ihrem Stadtbaumeister Elias Holl errichten. Es war ein Statement: Seht her, wir gehören zu den reichsten Städten Europas.',
@@ -30,7 +29,7 @@
     fact:'Augsburg feiert 15 vor Christus als Gründungsjahr, als römische Truppen das Alpenvorland eroberten. Die römische Stadt hieß Augusta Vindelicum, nach Kaiser Augustus. Damit gehört Augsburg zu den ältesten Städten Deutschlands.',
     look:'Die grüne Zirbelnuss ganz oben auf dem Giebel. Achte mal darauf: Sie begegnet dir in ganz Augsburg immer wieder.' },
 
-  { id:'perlach', name:'Perlachturm', wiki:'Perlachturm', ll:[48.3690,10.8981], themes:['geschichte','natur'], prio:3, dwell:8,
+  { id:'perlach', name:'Perlachturm', wiki:'Perlachturm', ll:[48.3690,10.8981], dwell:8,
     teaser:'70 Meter Ausblick und ein Erzengel, der einmal im Jahr zusticht.',
     story:[
       'Direkt neben dem Rathaus ragt der Perlachturm rund 70 Meter in die Höhe. Er begann im 10. Jahrhundert als Wachturm. 1614 bis 1616 stockte Elias Holl ihn kräftig auf, damit er neben seinem mächtigen neuen Rathaus nicht wie ein Zwerg aussah.',
@@ -39,7 +38,7 @@
     fact:'Bis zur Aussichtsplattform sind es 258 Stufen. Einen Aufzug gibt es nicht, du verdienst dir den Ausblick also ehrlich.',
     look:'Das kleine Fenster unten am Turm. Dort erscheint am Michaelstag der Turamichele.' },
 
-  { id:'augustus', name:'Augustusbrunnen', wiki:'Augustusbrunnen', ll:[48.3684,10.8987], themes:['wasser','kultur','geschichte'], prio:3, dwell:5,
+  { id:'augustus', name:'Augustusbrunnen', wiki:'Augustusbrunnen', ll:[48.3684,10.8987], dwell:5,
     teaser:'Der Stadtgründer in Bronze, umgeben von vier Flussgöttern.',
     story:[
       'Der Mann auf dem Sockel ist Kaiser Augustus persönlich, der Namensgeber der Stadt. Der Bildhauer Hubert Gerhard hat den Brunnen geschaffen, 1594 war er fertig.',
@@ -48,7 +47,7 @@
     fact:'Die Figuren, die du hier siehst, sind Kopien. Die Originale stehen gut geschützt im Maximilianmuseum, nur ein paar Gehminuten entfernt.',
     look:'Die vier Flussgötter am Beckenrand. Achte auf die Dinge, die sie in den Händen halten.' },
 
-  { id:'fuggerei', name:'Fuggerei', wiki:'Fuggerei', ll:[48.3694,10.9043], themes:['fugger','geschichte'], prio:3, dwell:25,
+  { id:'fuggerei', name:'Fuggerei', wiki:'Fuggerei', ll:[48.3694,10.9043], dwell:25,
     teaser:'Die älteste Sozialsiedlung der Welt. Miete: 88 Cent im Jahr.',
     story:[
       'Willkommen in der ältesten bestehenden Sozialsiedlung der Welt. Ab 1516 ließ Jakob Fugger, der wohl reichste Mann seiner Zeit, diese kleine Stadt in der Stadt für bedürftige Augsburger bauen, 1521 machte er sie per Stiftungsbrief dauerhaft. Das Erstaunliche: Sie funktioniert bis heute nach denselben Regeln.',
@@ -57,7 +56,7 @@
     fact:'Ein früherer Bewohner war der Maurer Franz Mozart, der Urgroßvater von Wolfgang Amadeus Mozart. Er lebte hier von 1681 bis 1694, eine Gedenktafel erinnert an ihn.',
     look:'Die unterschiedlich geformten Klingelzüge an den Haustüren.' },
 
-  { id:'fuggerhaeuser', name:'Fuggerhäuser', wiki:'Fuggerhäuser', ll:[48.3653,10.8996], themes:['fugger','promis','geschichte'], prio:2, dwell:8,
+  { id:'fuggerhaeuser', name:'Fuggerhäuser', wiki:'Fuggerhäuser', ll:[48.3653,10.8996], dwell:8,
     teaser:'Hier wurde Kaiserpolitik bezahlt und Luther verhört.',
     story:[
       'Diese lange Fassade an der Maximilianstraße war das Stadtpalais der Fugger. Von hier aus lenkte Jakob Fugger ein Handels- und Bankimperium, das von Lissabon bis Ungarn reichte. Er lieh Kaisern und Päpsten Geld, und 1519 finanzierte er maßgeblich die Wahl Karls des Fünften zum Kaiser.',
@@ -66,7 +65,7 @@
     fact:'Jakob Fugger erinnerte den Kaiser 1523 schriftlich daran, dass dieser die Krone ohne sein Zutun nicht bekommen hätte. Und forderte sein Geld zurück.',
     look:'Die Toreinfahrt zum Damenhof.' },
 
-  { id:'anna', name:'St. Anna', wiki:'St. Anna (Augsburg)', ll:[48.3678,10.8946], themes:['kirchen','fugger','promis'], prio:2, dwell:12,
+  { id:'anna', name:'St. Anna', wiki:'St. Anna (Augsburg)', ll:[48.3678,10.8946], dwell:12,
     teaser:'Fuggerkapelle, Lutherstiege und ein typisch Augsburger Paradox.',
     story:[
       'Von außen eher unscheinbar, innen eine Schatzkiste. In der Kirche liegt die Fuggerkapelle, die Grablege von Jakob Fugger und seinen Brüdern Ulrich und Georg. 1509 vereinbarten die Fugger ihren Bau mit dem Karmelitenkloster. Sie gilt als erster sakraler Renaissancebau in Deutschland.',
@@ -75,7 +74,7 @@
     fact:'Jakob Fugger starb 1525 ohne eigene Kinder. Firma und Vermögen übernahm sein Neffe Anton Fugger.',
     look:'Das Lutherporträt im Ostchor. Es stammt vermutlich aus der Werkstatt von Lucas Cranach.' },
 
-  { id:'schaezler', name:'Schaezlerpalais', wiki:'Schaezlerpalais', ll:[48.3636,10.9007], themes:['kultur','promis'], prio:2, dwell:10,
+  { id:'schaezler', name:'Schaezlerpalais', wiki:'Schaezlerpalais', ll:[48.3636,10.9007], dwell:10,
     teaser:'Rokoko-Ballsaal, in dem Marie Antoinette tanzte.',
     story:[
       'Hinter dieser eher schlichten Fassade versteckt sich einer der prächtigsten Rokoko-Festsäle Deutschlands. Der Bankier Benedikt Adam Liebert von Liebenhofen ließ das Palais von 1765 bis 1770 bauen, Spiegel, Stuck und Gold inklusive.',
@@ -84,7 +83,7 @@
     fact:'Seinen Namen hat das Palais von der Bankiersfamilie von Schaezler, die es später übernahm.',
     look:'Die schmale Fassade an der Maximilianstraße. Kaum zu glauben, wie weit das Gebäude nach hinten reicht.' },
 
-  { id:'herkules', name:'Herkulesbrunnen', wiki:'Herkulesbrunnen (Augsburg)', ll:[48.3639,10.9002], themes:['wasser','kultur'], prio:2, dwell:5,
+  { id:'herkules', name:'Herkulesbrunnen', wiki:'Herkulesbrunnen (Augsburg)', ll:[48.3639,10.9002], dwell:5,
     teaser:'Ein Held, ein Ungeheuer mit vielen Köpfen und viel Wasser.',
     story:[
       'Herkules kämpft hier mit einer flammenden Keule gegen die siebenköpfige Hydra, das Ungeheuer der griechischen Sage. Für jeden Kopf, den er abschlägt, wachsen zwei neue nach. Geschaffen hat die Figuren der Niederländer Adriaen de Vries, 1602 wurde der Brunnen am damaligen Weinmarkt aufgestellt.',
@@ -93,7 +92,7 @@
     fact:'Alle drei Prachtbrunnen sind seit 2019 Teil des UNESCO-Welterbes „Augsburger Wassermanagement-System“.',
     look:'Die Najaden am Sockel.' },
 
-  { id:'ulrich', name:'St. Ulrich und Afra', wiki:'St. Ulrich und Afra (Augsburg)', ll:[48.3612,10.9013], themes:['kirchen','geschichte'], prio:3, dwell:12,
+  { id:'ulrich', name:'St. Ulrich und Afra', wiki:'St. Ulrich und Afra (Augsburg)', ll:[48.3612,10.9013], dwell:12,
     teaser:'Zwei Kirchen, zwei Konfessionen, Wand an Wand.',
     story:[
       'Am südlichen Ende der Maximilianstraße steht ein Bauwerk, das Augsburgs Geschichte in sich trägt: die Basilika St. Ulrich und Afra. In ihr liegen die Gräber der beiden Stadtpatrone.',
@@ -102,7 +101,7 @@
     fact:'Am 8. August feiert Augsburg das Hohe Friedensfest, ein gesetzlicher Feiertag, der nur im Augsburger Stadtgebiet gilt. Es erinnert daran, dass Protestanten 1629 ihre Gottesdienste verboten wurden und sie nach dem Dreißigjährigen Krieg wieder gleichberechtigt waren.',
     look:'Stell dich so hin, dass du beide Kirchen gleichzeitig siehst.' },
 
-  { id:'dom', name:'Dom Mariä Heimsuchung', wiki:'Augsburger Dom', ll:[48.3729,10.8969], themes:['kirchen','geschichte'], prio:3, dwell:15,
+  { id:'dom', name:'Dom Mariä Heimsuchung', wiki:'Augsburger Dom', ll:[48.3729,10.8969], dwell:15,
     teaser:'Hier hängen die ältesten Figurenfenster der Welt.',
     story:[
       'Der Augsburger Dom ist die Bischofskirche der Stadt, und Teile von ihm sind über tausend Jahre alt. Von außen wirkt er gotisch, im Kern steckt aber eine romanische Kirche.',
@@ -111,7 +110,7 @@
     fact:'Rund um den Dom lag schon das Zentrum der römischen Stadt Augusta Vindelicum. Bei Bauarbeiten taucht hier immer wieder Römisches aus dem Boden auf.',
     look:'Die Prophetenfenster. Nimm dir einen Moment, bis sich die Augen an das Licht gewöhnt haben.' },
 
-  { id:'fronhof', name:'Fronhof & Hofgarten', wiki:'Fronhof (Augsburg)', ll:[48.3721,10.8957], themes:['geschichte','natur'], prio:2, dwell:8,
+  { id:'fronhof', name:'Fronhof & Hofgarten', wiki:'Fronhof (Augsburg)', ll:[48.3721,10.8957], dwell:8,
     teaser:'Wo das wichtigste Bekenntnis der Lutheraner verlesen wurde.',
     story:[
       'Der Fronhof war das Machtzentrum der Augsburger Bischöfe. Das große Gebäude ist die ehemalige fürstbischöfliche Residenz, heute sitzt hier die Regierung von Schwaben.',
@@ -120,7 +119,7 @@
     fact:'Durch das Augsburger Bekenntnis tragen lutherische Gemeinden den Namen der Stadt sozusagen um die ganze Welt.',
     look:'Die Gedenktafel am barocken Ostflügel der ehemaligen Residenz.' },
 
-  { id:'mozart', name:'Mozarthaus', wiki:'Mozarthaus (Augsburg)', ll:[48.3762,10.8954], themes:['promis','kultur'], prio:2, dwell:8,
+  { id:'mozart', name:'Mozarthaus', wiki:'Mozarthaus (Augsburg)', ll:[48.3762,10.8954], dwell:8,
     teaser:'Geburtshaus von Vater Mozart und die Geschichte vom „Bäsle“.',
     story:[
       'In diesem Haus wurde 1719 Leopold Mozart geboren, der Vater von Wolfgang Amadeus. Leopold ging später nach Salzburg, aber Augsburg blieb für die Familie wichtig.',
@@ -129,7 +128,7 @@
     fact:'In Augsburg probierte Wolfgang die Hammerklaviere des Klavierbauers Johann Andreas Stein aus und schwärmte davon in Briefen an seinen Vater.',
     look:'Die Gedenktafel an der Fassade.' },
 
-  { id:'brecht', name:'Brechthaus', wiki:'Brechthaus', ll:[48.3671,10.9019], themes:['promis','kultur'], prio:2, dwell:6,
+  { id:'brecht', name:'Brechthaus', wiki:'Brechthaus', ll:[48.3671,10.9019], dwell:6,
     teaser:'Geburtshaus eines Weltstars, der seine Heimat gern verspottete.',
     story:[
       'In diesem schmalen Haus im Lechviertel kam am 10. Februar 1898 Bertolt Brecht zur Welt, einer der wichtigsten Dramatiker des 20. Jahrhunderts. Das Haus aus dem frühen 18. Jahrhundert steht zwischen zwei Lechkanälen. Im Erdgeschoss arbeitete damals eine Feilenhauerei mit wassergetriebenem Hammerwerk. Der Lärm war vermutlich ein Grund, warum die Familie bald wieder auszog.',
@@ -138,7 +137,7 @@
     fact:'Eigentlich hieß er Eugen Berthold Friedrich Brecht. Den Namen „Bertolt“ legte er sich später selbst zu.',
     look:'Den Kanal direkt vor der Haustür.' },
 
-  { id:'puppenkiste', name:'Augsburger Puppenkiste', wiki:'Augsburger Puppenkiste', ll:[48.3600,10.9004], themes:['kultur'], prio:2, dwell:8,
+  { id:'puppenkiste', name:'Augsburger Puppenkiste', wiki:'Augsburger Puppenkiste', ll:[48.3600,10.9004], dwell:8,
     teaser:'Jim Knopf, Urmel und Kult aus dem Fernsehen.',
     story:[
       'Jim Knopf, Urmel, Kater Mikesch: Sie alle haben hier ihr Zuhause. Am 26. Februar 1948 eröffnete Walter Oehmichen mit seiner Familie die Augsburger Puppenkiste im ehemaligen Heilig-Geist-Spital.',
@@ -147,7 +146,7 @@
     fact:'Das Gebäude selbst ist auch ohne Marionetten sehenswert: Das Heilig-Geist-Spital war das letzte große Werk von Elias Holl, dem Baumeister des Rathauses. Fertig wurde es 1631.',
     look:'Den Innenhof des Heilig-Geist-Spitals.' },
 
-  { id:'wassertuerme', name:'Wassertürme am Roten Tor', wiki:'Wassertürme am Roten Tor', ll:[48.3594,10.9007], themes:['wasser','geschichte'], prio:2, dwell:8,
+  { id:'wassertuerme', name:'Wassertürme am Roten Tor', wiki:'Wassertürme am Roten Tor', ll:[48.3594,10.9007], dwell:8,
     teaser:'Das Wasserwerk, das Ingenieure aus ganz Europa bestaunten.',
     story:[
       'Hier am Roten Tor schlug jahrhundertelang das Herz der Augsburger Wasserversorgung. Wasserräder, angetrieben von Kanälen, pumpten Wasser hoch in die Türme. Von dort floss es mit natürlichem Gefälle durch Leitungen zu den Brunnen und in die Häuser.',
@@ -156,7 +155,7 @@
     fact:'Seit 2019 ist das Augsburger Wassermanagement-System UNESCO-Welterbe, mit insgesamt 22 Stationen von Kanälen über Wassertürme bis zu den Prachtbrunnen.',
     look:'Die schlanken Türme und das Rote Tor dahinter.' },
 
-  { id:'lechviertel', name:'Lechviertel & Stadtmetzg', wiki:'Stadtmetzg (Augsburg)', ll:[48.3666,10.8995], themes:['wasser','geschichte'], prio:3, dwell:8,
+  { id:'lechviertel', name:'Lechviertel & Stadtmetzg', wiki:'Stadtmetzg (Augsburg)', ll:[48.3666,10.8995], dwell:8,
     teaser:'Rauschende Kanäle, alte Handwerker und eine Kühlung von 1609.',
     story:[
       'Hier unten, wo die Kanäle durch die Gassen rauschen, lebten früher die Handwerker: Gerber, Färber, Müller und Goldschmiede. Sie alle brauchten fließendes Wasser, als Antrieb, zum Waschen und zum Kühlen.',
@@ -165,7 +164,7 @@
     fact:'Seit über tausend Jahren treiben die Lechkanäle in Augsburg Wasserräder an. Gespeist werden sie vom Lech, der am Hochablass im Süden der Stadt aufgestaut wird.',
     look:'Wo der Kanal unter der Stadtmetzg verschwindet.' },
 
-  { id:'synagoge', name:'Synagoge Augsburg', wiki:'Synagoge Augsburg', ll:[48.3664,10.8921], themes:['geschichte','kultur','kirchen'], prio:2, dwell:10,
+  { id:'synagoge', name:'Synagoge Augsburg', wiki:'Synagoge Augsburg', ll:[48.3664,10.8921], dwell:10,
     teaser:'Eine Kuppel aus dem Ersten Weltkrieg, die 1938 nur knapp überstand.',
     story:[
       'Hinter dem Eingang an der Halderstraße versteckt sich eine der schönsten Synagogen Europas. Entworfen von Fritz Landauer und Heinrich Lömpel, wurde sie 1917 eingeweiht, mitten im Ersten Weltkrieg. Über dem Hauptraum wölbt sich eine 29 Meter hohe Kuppel.',
@@ -174,7 +173,7 @@
     fact:'Die Synagoge gilt als eine der schönsten in Europa. Fachleute nennen sie ein Schmuckkästchen unter den deutschen Synagogen.',
     look:'Die Kuppel, die über den Innenhof hinausragt.' },
 
-  { id:'zeughaus', name:'Zeughaus', wiki:'Zeughaus (Augsburg)', ll:[48.3681,10.8925], themes:['geschichte','kultur'], prio:1, dwell:5,
+  { id:'zeughaus', name:'Zeughaus', wiki:'Zeughaus (Augsburg)', ll:[48.3681,10.8925], dwell:5,
     teaser:'Ein Waffenlager mit Stil und ein Erzengel im Kampf.',
     story:[
       'Das Zeughaus war das Waffenlager der Reichsstadt. Elias Holl übernahm 1602 den Umbau eines früheren Kornhauses und vollendete ihn 1607. Schon die Fassade macht klar: Hier ging es um Wehrhaftigkeit, aber auch um Eindruck.',
@@ -183,7 +182,7 @@
     fact:'Michael begegnet dir in Augsburg öfter. Auch der Turamichele im Perlachturm ist der Erzengel.',
     look:'Die Bronzegruppe über dem Portal.' },
 
-  { id:'maxmuseum', name:'Maximilianmuseum', wiki:'Maximilianmuseum', ll:[48.3683,10.8958], themes:['kultur','wasser'], prio:2, dwell:10,
+  { id:'maxmuseum', name:'Maximilianmuseum', wiki:'Maximilianmuseum', ll:[48.3683,10.8958], dwell:10,
     teaser:'Die echten Brunnenfiguren, unter einem Glasdach.',
     story:[
       'Das Maximilianmuseum ist Augsburgs Stadtmuseum. Der Star ist der Viermetzhof, ein Innenhof mit freitragendem Glasdach, in dem die originalen Bronzefiguren der Prachtbrunnen stehen.',
@@ -192,7 +191,7 @@
     fact:'Hier steht auch die Modellkammer, die Elias Holl 1620 über dem Goldenen Saal einrichtete: Modelle von Gebäuden, Maschinen und Wasseranlagen, einmalig in Deutschland.',
     look:'Den Viermetzhof mit seinem Glasdach.' },
 
-  { id:'stadtmauer', name:'Vogeltor & Fünfgratturm', wiki:'Fünfgratturm', ll:[48.3660,10.9078], themes:['geschichte'], prio:1, dwell:5,
+  { id:'stadtmauer', name:'Vogeltor & Fünfgratturm', wiki:'Fünfgratturm', ll:[48.3660,10.9078], dwell:5,
     teaser:'Ein Stück alte Stadtmauer mit ungewöhnlichem Dach.',
     story:[
       'Im Osten der Altstadt ist noch ein Stück der alten Stadtbefestigung erhalten. Durch das Vogeltor kam man früher in die Jakobervorstadt.',
@@ -201,7 +200,7 @@
     fact:'Einige Stadttore sind bis heute erhalten, darunter das Rote Tor, das Vogeltor, das Jakobertor und das Wertachbrucker Tor.',
     look:'Zähl die Grate auf dem Turmdach.' },
 
-  { id:'lueginsland', name:'Bastion Lueginsland', wiki:'Lueginsland (Augsburg)', ll:[48.3757,10.9009], themes:['natur','geschichte'], prio:1, dwell:8,
+  { id:'lueginsland', name:'Bastion Lueginsland', wiki:'Lueginsland (Augsburg)', ll:[48.3757,10.9009], dwell:8,
     teaser:'„Lug ins Land“: ein ruhiger Aussichtspunkt auf der alten Stadtmauer.',
     story:[
       '„Lug ins Land“, schau ins Land: Genau das tat man hier. 1430 begann man auf Rat von Kaiser Sigismund mit einem Wachturm, ab 1532 wurde daraus eine Bastion, bestückt mit bis zu 21 Kanonen.',
@@ -210,7 +209,7 @@
     fact:'Bei Föhn und klarer Sicht reicht der Blick von Augsburgs Aussichtspunkten bis zur Alpenkette.',
     look:'Den Verlauf des Stadtgrabens unterhalb der Bastion.' },
 
-  { id:'eiskanal', name:'Eiskanal', wiki:'Eiskanal (Augsburg)', ll:[48.3540,10.9270], themes:['natur','wasser'], prio:2, dwell:10,
+  { id:'eiskanal', name:'Eiskanal', wiki:'Eiskanal (Augsburg)', ll:[48.3540,10.9270], dwell:10,
     teaser:'Die erste künstliche Wildwasserstrecke der Welt.',
     story:[
       'Der Eiskanal war 1972 Schauplatz einer Premiere: Bei den Olympischen Spielen von München wurde hier zum ersten Mal Kanuslalom olympisch ausgetragen. Dafür baute man die erste künstliche Wildwasserstrecke der Welt.',
@@ -219,7 +218,7 @@
     fact:'Gepaddelt wurde hier schon lange vor Olympia: Kanuten nutzten den Eiskanal bereits seit 1945.',
     look:'Die Slalomtore, die über dem Wasser hängen.' },
 
-  { id:'hochablass', name:'Hochablass', wiki:'Hochablass', ll:[48.3400,10.9330], themes:['wasser','natur'], prio:1, dwell:10,
+  { id:'hochablass', name:'Hochablass', wiki:'Hochablass', ll:[48.3400,10.9330], dwell:10,
     teaser:'Hier beginnt das ganze Augsburger Kanalsystem.',
     story:[
       'Am Hochablass beginnt alles: Hier wird der Lech gestaut und Wasser in die Kanäle abgezweigt, die durch die ganze Stadt fließen. Ohne dieses Wehr gäbe es kein rauschendes Lechviertel, keine Wasserräder und keinen Eiskanal.',
@@ -228,7 +227,7 @@
     fact:'Der Lech entspringt in Vorarlberg in Österreich und mündet nördlich von Augsburg in die Donau.',
     look:'Das Wehr, wenn das Wasser über die Kante schießt.' },
 
-  { id:'tim', name:'Textil- und Industriemuseum', wiki:'Staatliches Textil- und Industriemuseum Augsburg', ll:[48.3637,10.9150], themes:['kultur','geschichte'], prio:2, dwell:10,
+  { id:'tim', name:'Textil- und Industriemuseum', wiki:'Staatliches Textil- und Industriemuseum Augsburg', ll:[48.3637,10.9150], dwell:10,
     teaser:'Wie Augsburg zur Textilstadt wurde.',
     story:[
       'Augsburg war über Jahrhunderte eine Textilstadt. Schon die Fugger kamen als Weber in die Stadt, und im 19. Jahrhundert wurde Augsburg zu einem Zentrum der Industrialisierung in Bayern.',
@@ -237,7 +236,7 @@
     fact:'Im Museum lagern rund 1,3 Millionen Stoffmuster der Neuen Augsburger Kattunfabrik, aus über 200 Jahren.',
     look:'Die alten Fabrikfassaden rund um das Museum.' },
 
-  { id:'glaspalast', name:'Glaspalast', wiki:'Glaspalast (Augsburg)', ll:[48.3618,10.9140], themes:['kultur'], prio:1, dwell:6,
+  { id:'glaspalast', name:'Glaspalast', wiki:'Glaspalast (Augsburg)', ll:[48.3618,10.9140], dwell:6,
     teaser:'Eine Spinnerei aus Glas, heute voller Kunst.',
     story:[
       'Der Glaspalast wurde 1910 als Baumwollspinnerei fertig, gebaut von Philipp Jakob Manz, mit riesigen Fensterflächen für möglichst viel Tageslicht. Daher der Name.',
@@ -245,7 +244,7 @@
     fact:'Tageslicht war für Textilfabriken bares Geld: Je heller die Halle, desto weniger teures Kunstlicht brauchte man.',
     look:'Die großen Fensterreihen der Fassade.' },
 
-  { id:'botgarten', name:'Botanischer Garten', wiki:'Botanischer Garten Augsburg', ll:[48.3426,10.9174], themes:['natur'], prio:1, dwell:20,
+  { id:'botgarten', name:'Botanischer Garten', wiki:'Botanischer Garten Augsburg', ll:[48.3426,10.9174], dwell:20,
     teaser:'Japangarten, Rosen und Tropenhaus im Grünen.',
     story:[
       'Der Botanische Garten im Süden der Stadt ist eine echte Oase: Rosengarten, Steingarten, Tropenhaus und ein besonders schöner Japangarten.',

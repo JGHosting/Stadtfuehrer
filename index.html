@@ -463,10 +463,11 @@ function notice(msg,ms=4500){ const n=$('#notice'); n.textContent=msg; n.hidden=
    Zustand & Einstellungen
    ===================================================================== */
 const DEFAULTS = {startKind:'', mode:'walk', minutes:120, themes:['geschichte','fugger','wasser'], loop:true,
-                  autoplay:true, wayside:true, turns:false, rate:1, audio:true, sim:false, simSpeed:'5', voice:'gemini', v:2};
+                  autoplay:true, wayside:true, turns:false, rate:1, audio:true, sim:false, simSpeed:'5', voice:'gemini', v:3};
 const state = {
   settings: (()=>{ const st=Object.assign({}, DEFAULTS, store.get('settings', {}));
     if(!(st.v>=2)){ st.turns=false; st.voice='gemini'; st.v=2; }
+    if(!(st.v>=3)){ st.themes=[]; st.themesByCity={}; st.v=3; }   // neue Kategorien mit Must-See
     if(st.voice==='seraphina') st.voice='katja'; if(st.voice==='florian') st.voice='conrad';
     if(![1,1.25,1.5,2].includes(+st.rate)) st.rate=1;
     return st; })(),
@@ -554,39 +555,45 @@ function twoOpt(seq,start,mode,loop){
   }
   return best;
 }
-/* Priorität der Stadt: 3 = Top-Highlight (soll auf möglichst jeder Tour sein), 2 = sehenswert, 1 = Extra */
-const PRIO_W={3:6,2:2,1:0.5};
-function scoreOf(s,themes){
-  const ov=s.themes.filter(t=>themes.includes(t)).length;
-  if(!ov && (s.prio||1)<3) return 0;                    // Highlights kommen auch ohne passendes Thema in Frage
-  return ov*6 + PRIO_W[s.prio||1];
+/* Kategorien der Stadt: „Must-See“ plus weitere Kategorien, jede Liste nach Berühmtheit sortiert.
+   Aus den Listen werden für jede Station abgeleitet: themes (Kategorien), mustsee, rank (beste Platzierung). */
+function normalizeCity(c){
+  if(c._norm) return c;
+  c.themes=c.categories.map(k=>({id:k.id,label:k.label}));
+  for(const s of c.stops){ s.themes=[]; s.rank=99; s.mustsee=false; }
+  for(const k of c.categories) k.stops.forEach((id,i)=>{ const s=c.stops.find(x=>x.id===id); if(!s) return;
+    s.themes.push(k.id); s.rank=Math.min(s.rank,i); if(k.id==='mustsee') s.mustsee=true; });
+  c._norm=true; return c;
 }
+/* Wichtigkeit einer Station für die gewählten Kategorien (für die Auswahl, falls die Tour zu lang wird) */
+function scoreOf(s,themes){
+  let best=0;
+  for(const k of CITY.categories){ if(!themes.includes(k.id)) continue; const i=k.stops.indexOf(s.id); if(i<0) continue;
+    best=Math.max(best,(k.id==='mustsee'?30:15)-i); }
+  return best;
+}
+/* Tourplanung:
+   1. Must-See in ihrer Reihenfolge, solange sie in ~70 % der Zeit passen (ohne weitere Kategorien: in die ganze Zeit).
+   2. Die anderen gewählten Kategorien im Reißverschluss: von jeder Kategorie die berühmteste, dann die zweitberühmteste …
+   Jede Station wird an der günstigsten Stelle eingefügt; Stationen, für die man einen großen Umweg laufen müsste, werden übersprungen. */
 function planTour({start,mode,minutes,themes,loop}){
-  const cands=CITY.stops.filter(s=>scoreOf(s,themes)>0);
+  const cats=CITY.categories.filter(k=>themes.includes(k.id));
+  const must=cats.find(k=>k.id==='mustsee'), others=cats.filter(k=>k.id!=='mustsee');
+  const byId=id=>CITY.stops.find(s=>s.id===id);
+  const maxDetour=Math.max(12, minutes*0.2);          // Minuten Wegzeit, die eine einzelne Station höchstens „kosten“ darf
   let seq=[];
-  const insertCheapest=(s,limit)=>{ let best=null;
+  const tryInsert=(s,limit,detour=maxDetour)=>{
+    if(!s||seq.includes(s)) return;
+    const base=tourTime(seq,start,mode,loop); let best=null;
     for(let i=0;i<=seq.length;i++){ const trial=[...seq.slice(0,i),s,...seq.slice(i)], t=tourTime(trial,start,mode,loop);
       if(t<=limit && (!best||t<best.t)) best={trial,t}; }
-    if(best) seq=twoOpt(best.trial,start,mode,loop); return !!best; };
-  // Phase 1: die Highlights der Stadt in ihrer Rangfolge (CITY.highlights) – solange sie in ~70 % der Zeit passen.
-  const ranking=(CITY.highlights||CITY.stops.filter(s=>(s.prio||1)>=3).map(s=>s.id)).map(id=>CITY.stops.find(s=>s.id===id)).filter(Boolean);
-  for(const s of ranking) insertCheapest(s,minutes*0.7);
-  // Phase 2: mit Stopps zu deinen Themen (und weiteren Highlights) bis zur vollen Zeit auffüllen.
-  for(;;){
-    const base=tourTime(seq,start,mode,loop); let best=null;
-    for(const s of cands){
-      if(seq.includes(s)) continue;
-      for(let i=0;i<=seq.length;i++){
-        const trial=[...seq.slice(0,i),s,...seq.slice(i)], t=tourTime(trial,start,mode,loop);
-        if(t>minutes) continue;
-        // Aufenthaltszeit zählt nur teilweise als „Kosten“ – große Stopps mit langem Aufenthalt sollen nicht benachteiligt werden
-        const ratio=scoreOf(s,themes)/Math.max(t-base-0.7*dwellOf(s,mode),1);
-        if(!best||ratio>best.ratio) best={trial,ratio};
-      }
-    }
-    if(!best) break;
+    if(!best || best.t-base-dwellOf(s,mode)>detour) return;
     seq=twoOpt(best.trial,start,mode,loop);
-  }
+  };
+  if(must) must.stops.forEach(id=>tryInsert(byId(id), others.length? minutes*0.7 : minutes, minutes*0.45));   // Must-See dürfen größere Wege kosten
+  const depth=Math.max(0,...others.map(k=>k.stops.length));
+  for(let r=0;r<depth;r++) for(const k of others) tryInsert(byId(k.stops[r]), minutes);
+  if(must && others.length) must.stops.forEach(id=>tryInsert(byId(id), minutes));   // Restzeit: weitere Must-See
   return seq;
 }
 
@@ -1003,7 +1010,7 @@ function loadCityData(entry){
 async function selectCity(id){
   if(state.nav) return;
   const entry=cityEntry(id)||CITIES[0];
-  try{ CITY=await loadCityData(entry); }catch(e){ notice('Die Stadt konnte nicht geladen werden. Bitte Internetverbindung prüfen.'); return; }
+  try{ CITY=normalizeCity(await loadCityData(entry)); }catch(e){ notice('Die Stadt konnte nicht geladen werden. Bitte Internetverbindung prüfen.'); return; }
   const s=state.settings;
   s.themesByCity=s.themesByCity||{};
   if(s.cityId && s.cityId!==entry.id) s.themesByCity[s.cityId]=s.themes;      // Themenauswahl pro Stadt merken
@@ -1123,7 +1130,7 @@ function renderPreview(total){
     : `Davon ca. ${fmtDist(pm)} durch Fußgängerzonen. Dort musst du absteigen und schieben, die Route ist gelb markiert und die Zeit ist mit Gehtempo eingerechnet.`;
   const ol=$('#pvList'); ol.innerHTML='';
   state.tour.forEach((st,i)=>{ const li=document.createElement('li');
-    li.innerHTML=`<span class="num">${i+1}</span><span class="t"><b>${esc(st.name)}${(st.prio||1)>=3?' <i class="hl">Highlight</i>':''}</b><span>${esc(st.teaser)}</span></span><span class="m">${dwellOf(st,s.mode)} min</span>`;
+    li.innerHTML=`<span class="num">${i+1}</span><span class="t"><b>${esc(st.name)}${st.mustsee?' <i class="hl">Must-See</i>':''}</b><span>${esc(st.teaser)}</span></span><span class="m">${dwellOf(st,s.mode)} min</span>`;
     li.onclick=()=>openStory(st,{mode:'preview'}); ol.appendChild(li); });
   positionLocate();
 }
