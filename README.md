@@ -36,7 +36,11 @@ Den Stand zeigt die App im Entwicklerbereich unter „KI-Audios“ (`audio/statu
 1. `content/<id>.js` nach dem Muster von `content/augsburg.js` anlegen (Startpunkte, Themen, Highlight-Rangfolge, Stopps mit Priorität, Wegesrand, Viertel).
 2. In `content/cities.js` einen Eintrag ergänzen (Name, Untertitel, Mittelpunkt, Radius, Datei).
 3. Hochladen. GitHub erzeugt die Audios (`audio/manifest-<id>.json`), die App erkennt die Stadt am Standort
-   oder man wählt sie oben im Menü aus. Geladen wird immer nur die Datei der gewählten Stadt.
+   oder man wählt sie im Entwicklermodus aus. Geladen wird immer nur die Datei der gewählten Stadt.
+4. Auch die iPhone-App bekommt die neue Stadt sofort, ohne App-Update: Beim Deploy entstehen `content/cities.json`
+   und `content/<id>.json` (`tools/export-content.mjs`), die App lädt sie von GitHub Pages und merkt sich die letzte
+   Version für unterwegs ohne Netz. Ändert sich der Aufbau der Daten so, dass alte App-Versionen ihn nicht verstehen,
+   in `tools/export-content.mjs` das `FORMAT` erhöhen (alte Apps bleiben dann bei ihren mitgelieferten Inhalten).
 
 ## Entwicklermodus
 Sieben Mal schnell auf „Deine Stadtführung“ tippen (oder `?dev=1` an die Adresse hängen) blendet unten den Bereich

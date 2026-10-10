@@ -441,6 +441,25 @@ const store = {
   get(k,d){ try{ const v=localStorage.getItem('sf_'+k); return v==null?d:JSON.parse(v);}catch(e){ return d; } },
   set(k,v){ try{ localStorage.setItem('sf_'+k, JSON.stringify(v)); }catch(e){} }
 };
+/* Inhalte live nachladen (nur iPhone-App): Städteliste und Stadtinhalte kommen als JSON von der Web-Version,
+   damit neue Städte und Textänderungen ohne App-Update ankommen. Reihenfolge: Netz → zuletzt geladene Kopie → in der App enthalten.
+   Die Web-Version lädt ohnehin immer die aktuellen Dateien. */
+const CONTENT_FORMAT=1;                                       // höchstes Format, das diese App-Version versteht
+const REMOTE = NATIVE && globalThis.APP_CONFIG && APP_CONFIG.webBase ? APP_CONFIG.webBase+'content/' : null;
+const okFormat = j => j && typeof j.format==='number' && j.format<=CONTENT_FORMAT;
+function fetchJSON(url,ms=4000){ const c=new AbortController(), t=setTimeout(()=>c.abort(),ms);
+  return fetch(url,{cache:'no-cache',signal:c.signal}).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).finally(()=>clearTimeout(t)); }
+function mergeCities(list){
+  if(!Array.isArray(list)||!list.length) return;
+  globalThis.CITIES=list.filter(c=>c&&c.id&&Array.isArray(c.center)).map(c=>({...c, remote:true, file:(CITIES.find(x=>x.id===c.id)||{}).file||null}));
+}
+if(REMOTE){ const c=store.get('remoteCities',null); if(okFormat(c)) mergeCities(c.cities); }   // letzte bekannte Liste sofort nutzen
+async function refreshRemoteCities(){
+  if(!REMOTE) return false;
+  try{ const j=await fetchJSON(REMOTE+'cities.json'); if(!okFormat(j)) return false;
+    store.set('remoteCities',j); const before=CITIES.map(c=>c.id).join(); mergeCities(j.cities); return CITIES.map(c=>c.id).join()!==before;
+  }catch(e){ return false; }
+}
 const R = 6371000, rad = x => x*Math.PI/180;
 function dist(a,b){ // [lat,lon]
   const dLat=rad(b[0]-a[0]), dLon=rad(b[1]-a[1]);
@@ -1030,8 +1049,13 @@ function initPlanUI(){
 let CITY=null;
 const cityEntry=id=>CITIES.find(c=>c.id===id);
 function cityAt(ll){ let best=null; for(const c of CITIES){ const d=dist(ll,c.center); if(d<=c.radius&&(!best||d<best.d)) best={c,d}; } return best&&best.c; }
-function loadCityData(entry){
-  const D=globalThis.CITY_DATA||{}; if(D[entry.id]) return Promise.resolve(D[entry.id]);
+async function loadCityData(entry){
+  const D=globalThis.CITY_DATA=globalThis.CITY_DATA||{}; if(D[entry.id]) return D[entry.id];
+  if(REMOTE){
+    try{ const j=await fetchJSON(REMOTE+entry.id+'.json'); if(okFormat(j)&&j.data&&j.data.id===entry.id){ store.set('city_'+entry.id,j); return D[entry.id]=j.data; } }catch(e){}
+    const c=store.get('city_'+entry.id,null); if(okFormat(c)&&c.data) return D[entry.id]=c.data;
+  }
+  if(!entry.file) throw new Error('Stadt nur online verfügbar');
   return new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src=entry.file;
     sc.onload=()=>{ const d=(globalThis.CITY_DATA||{})[entry.id]; d? res(d) : rej(new Error('Stadtdatei unvollständig')); }; sc.onerror=()=>rej(new Error('Stadt konnte nicht geladen werden')); document.head.appendChild(sc); });
 }
@@ -1620,7 +1644,9 @@ async function detectCity(){
     if(!here && !state.dev && state.settings.startKind!=='me') notice(`Du bist gerade in keiner Stadt, für die es schon Touren gibt. Die Tour durch ${CITY.name} kannst du dir trotzdem ansehen.`,7000);
   }catch(e){ /* kein Standort: zuletzt genutzte Stadt bleibt */ }
 }
-selectCity(state.settings.cityId).then(()=>{
+if(REMOTE) refreshRemoteCities().then(changed=>{ if(changed&&CITY) renderCityList(); });
+selectCity(state.settings.cityId).then(async ok=>{
+  if(!ok && !CITY) await selectCity(CITIES[0].id);   // gespeicherte Stadt gibt es nicht (mehr) oder sie lädt nicht
   showView('viewPlan');
   Promise.all([mapReady,consentReady]).then(async()=>{ await detectCity(); if(state.settings.startKind==='me') locateOnce(true); });
 });

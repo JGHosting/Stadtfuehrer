@@ -63,6 +63,7 @@ jobs:
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" audio-status
       - name: Nur die Web-App veröffentlichen (ohne native/, server/, tools/, docs/)
         run: |
+          node tools/export-content.mjs   # Stadtinhalte als JSON für die iPhone-App (Live-Updates ohne App-Update)
           mkdir _site
           cp -r index.html sw.js manifest.webmanifest icon-*.png content vendor legal audio _site/
       - uses: actions/configure-pages@v5
