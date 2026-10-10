@@ -63,6 +63,16 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
                 if #available(iOS 16.2, *) { StrolliActivity.shared.patch(playing: false, clearAudio: true) }
             }
         }
+        // Darwin-Benachrichtigungen der Widget-Knöpfe empfangen und als lokale Benachrichtigung weitergeben
+        let center = CFNotificationCenterGetDarwinNotifyCenter()
+        for action in ["toggle", "skip"] {
+            CFNotificationCenterAddObserver(center, nil, { _, _, name, _, _ in
+                guard let n = name else { return }
+                let raw = n.rawValue as String
+                let action = raw.hasSuffix("toggle") ? "toggle" : "skip"
+                DispatchQueue.main.async { NotificationCenter.default.post(name: strolliRemoteNotification, object: action) }
+            }, "com.greimel.strolli.\(action)" as CFString, nil, .deliverImmediately)
+        }
         if #available(iOS 16.2, *) { StrolliActivity.endAll() }   // Reste einer abgebrochenen Tour entfernen
     }
 
@@ -294,6 +304,13 @@ final class StrolliActivity {
     }
 }
 
+/// Knöpfe der Live Activity laufen je nach iOS-Version im Prozess der Widget-Erweiterung. Eine Darwin-Benachrichtigung
+/// erreicht die App prozessübergreifend (ohne App Group).
+func strolliPostDarwin(_ action: String) {
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+                                         CFNotificationName("com.greimel.strolli.\(action)" as CFString), nil, nil, true)
+}
+
 // MARK: - Gemeinsam mit der Widget-Erweiterung (muss dort identisch sein: native/ios-src/widget/StrolliWidgetLiveActivity.swift)
 
 @available(iOS 16.1, *)
@@ -316,7 +333,7 @@ struct StrolliToggleAudioIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Pause oder weiter"
     init() {}
     func perform() async throws -> some IntentResult {
-        await MainActor.run { NotificationCenter.default.post(name: Notification.Name("StrolliRemoteCommand"), object: "toggle") }
+        strolliPostDarwin("toggle")
         return .result()
     }
 }
@@ -326,7 +343,7 @@ struct StrolliSkipIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Ansage überspringen"
     init() {}
     func perform() async throws -> some IntentResult {
-        await MainActor.run { NotificationCenter.default.post(name: Notification.Name("StrolliRemoteCommand"), object: "skip") }
+        strolliPostDarwin("skip")
         return .result()
     }
 }

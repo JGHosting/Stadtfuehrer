@@ -5,6 +5,13 @@ import WidgetKit
 import SwiftUI
 import AppIntents
 
+/// Knöpfe der Live Activity laufen je nach iOS-Version im Prozess der Widget-Erweiterung. Eine Darwin-Benachrichtigung
+/// erreicht die App prozessübergreifend (ohne App Group).
+func strolliPostDarwin(_ action: String) {
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+                                         CFNotificationName("com.greimel.strolli.\(action)" as CFString), nil, nil, true)
+}
+
 // MARK: - Gemeinsam mit der App (muss identisch sein mit native/ios-src/StrolliNative.swift)
 
 struct StrolliTourAttributes: ActivityAttributes {
@@ -25,7 +32,7 @@ struct StrolliToggleAudioIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Pause oder weiter"
     init() {}
     func perform() async throws -> some IntentResult {
-        await MainActor.run { NotificationCenter.default.post(name: Notification.Name("StrolliRemoteCommand"), object: "toggle") }
+        strolliPostDarwin("toggle")
         return .result()
     }
 }
@@ -34,7 +41,7 @@ struct StrolliSkipIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Ansage überspringen"
     init() {}
     func perform() async throws -> some IntentResult {
-        await MainActor.run { NotificationCenter.default.post(name: Notification.Name("StrolliRemoteCommand"), object: "skip") }
+        strolliPostDarwin("skip")
         return .result()
     }
 }
