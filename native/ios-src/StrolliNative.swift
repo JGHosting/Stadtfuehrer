@@ -70,6 +70,7 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
                 guard let n = name else { return }
                 let raw = n.rawValue as String
                 let action = raw.hasSuffix("toggle") ? "toggle" : "skip"
+                print("[Strolli] Darwin-Nachricht empfangen: \(action)")
                 DispatchQueue.main.async { NotificationCenter.default.post(name: strolliRemoteNotification, object: action) }
             }, "com.greimel.strolli.\(action)" as CFString, nil, .deliverImmediately)
         }
@@ -77,17 +78,25 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
     }
 
     // MARK: Audio-Sitzung
-    private func activate() {
-        let s = AVAudioSession.sharedInstance()
-        try? s.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
-        do { try s.setActive(true) } catch { print("[Strolli] Audio-Sitzung: \(error)") }
+    /// Audio-Sitzung an- und abschalten dauert spürbar – deshalb nicht im Haupt-Thread (sonst hakt die Bedienung).
+    private let sessionQueue = DispatchQueue(label: "strolli.audiosession")
+    private func activate(then done: @escaping () -> Void) {
+        sessionQueue.async {
+            let s = AVAudioSession.sharedInstance()
+            try? s.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
+            do { try s.setActive(true) } catch { print("[Strolli] Audio-Sitzung: \(error)") }
+            DispatchQueue.main.async(execute: done)
+        }
+    }
+    private func deactivate() {
+        sessionQueue.async { try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation) }
     }
     /// Nach der Ansage die Sitzung freigeben, damit Musik wieder in voller Lautstärke spielt.
     private func scheduleDeactivate() {
         let g = gen
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak self] in
             guard let self = self, self.gen == g, self.player == nil, !self.synth.isSpeaking else { return }
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            self.deactivate()
         }
     }
 
@@ -100,7 +109,7 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
             self.halt()
             self.gen += 1
             self.currentId = id
-            self.activate()
+            let g = self.gen
             let item = AVPlayerItem(url: url)
             item.audioTimePitchAlgorithm = .timeDomain
             let p = AVPlayer(playerItem: item)
@@ -117,8 +126,11 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
                     DispatchQueue.main.async { self?.failed(id, msg) }
                 }
             }
-            p.playImmediately(atRate: self.rate)
-            print("[Strolli] spiele \(url.lastPathComponent)")
+            self.activate { [weak self] in
+                guard let self = self, self.gen == g, self.player === p else { return }
+                p.playImmediately(atRate: self.rate)
+                print("[Strolli] spiele \(url.lastPathComponent)")
+            }
             call.resolve()
         }
     }
@@ -131,13 +143,16 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
             self.halt()
             self.gen += 1
             self.currentId = id
-            self.activate()
+            let g = self.gen
             let u = AVSpeechUtterance(string: text)
             u.voice = StrolliAudioPlugin.germanVoice()
             u.rate = min(AVSpeechUtteranceMaximumSpeechRate, AVSpeechUtteranceDefaultSpeechRate * (0.5 + 0.5 * self.rate))
             self.utterance = u
-            self.synth.speak(u)
-            print("[Strolli] Gerätestimme: \(text.prefix(40))")
+            self.activate { [weak self] in
+                guard let self = self, self.gen == g, self.utterance === u else { return }
+                self.synth.speak(u)
+                print("[Strolli] Gerätestimme: \(text.prefix(40))")
+            }
             call.resolve()
         }
     }
@@ -158,12 +173,14 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
         if playing {
             player?.pause()
             if synth.isSpeaking { synth.pauseSpeaking(at: .word) }
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            deactivate()
             return true
         }
-        activate()
-        if let p = player { p.playImmediately(atRate: rate) }
-        if synth.isPaused { synth.continueSpeaking() }
+        activate { [weak self] in
+            guard let self = self else { return }
+            if let p = self.player { p.playImmediately(atRate: self.rate) }
+            if self.synth.isPaused { self.synth.continueSpeaking() }
+        }
         return false
     }
 
@@ -172,16 +189,18 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
             self.player?.pause()
             if self.synth.isSpeaking { self.synth.pauseSpeaking(at: .word) }
             // Während der Pause soll die Musik wieder normal laut sein
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            self.deactivate()
             call.resolve()
         }
     }
 
     @objc func resume(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
-            self.activate()
-            if let p = self.player { p.playImmediately(atRate: self.rate) }
-            if self.synth.isPaused { self.synth.continueSpeaking() }
+            self.activate { [weak self] in
+                guard let self = self else { return }
+                if let p = self.player { p.playImmediately(atRate: self.rate) }
+                if self.synth.isPaused { self.synth.continueSpeaking() }
+            }
             call.resolve()
         }
     }
@@ -307,6 +326,7 @@ final class StrolliActivity {
 /// Knöpfe der Live Activity laufen je nach iOS-Version im Prozess der Widget-Erweiterung. Eine Darwin-Benachrichtigung
 /// erreicht die App prozessübergreifend (ohne App Group).
 func strolliPostDarwin(_ action: String) {
+    print("[Strolli] Intent ausgeführt: \(action)")
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
                                          CFNotificationName("com.greimel.strolli.\(action)" as CFString), nil, nil, true)
 }
