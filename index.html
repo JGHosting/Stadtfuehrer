@@ -795,8 +795,12 @@ const Speech = {
       N.addListener('ended',e=>{ if(this.playing&&this.playing.id===e.id) this._done(); });
       N.addListener('error',e=>{ const it=this.playing; if(it&&it.id===e.id){ if(it.src){ it.src=null; this._device(it); } else this._done(); } });
       // Knöpfe auf dem Sperrbildschirm / in der Dynamic Island
-      N.addListener('remote',e=>{ if(e.action==='toggle'){ if(!this.playing) return; this.paused? this.resume() : this.pause(); }
-        else if(e.action==='skip') this.skip(); });
+      // Die Knöpfe wurden nativ schon ausgeführt – hier nur den Zustand der App nachziehen
+      N.addListener('remote',e=>{
+        if(e.action==='paused'){ if(this.playing){ this.paused=true; updatePlayBtn(); } }
+        else if(e.action==='resumed'){ this.paused=false; updatePlayBtn(); }
+        else if(e.action==='skipped'){ const it=this.playing; if(!it) return; const cb=it.onend; this.queue=[]; this.playing=null; this.tag=null; this.paused=false; if(cb) cb(); updatePlayBtn(); }
+      });
     }
     this.el.preload='auto';
     this.el.addEventListener('ended',()=>this._done());
@@ -1483,7 +1487,12 @@ async function requestWake(){
     state.wake=w; w.addEventListener('release',()=>{ if(state.wake===w) state.wake=null; });   // beim Ausblenden gibt der Browser ihn frei
   }catch(e){}
 }
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&state.nav&&!state.wake) requestWake(); });
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='visible') return;
+  if(state.nav&&!state.wake) requestWake();
+  if(state.nav){ updateNavUI(); drawRoute(); }
+  updatePlayBtn(); if(map) map.triggerRepaint();
+});
 
 /* Simulation: läuft die aktuelle Etappe im Zeitraffer ab */
 function simTick(){

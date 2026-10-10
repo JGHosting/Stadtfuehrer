@@ -45,9 +45,23 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
         synth.delegate = self
         print("[Strolli] Audio-Plugin geladen")
         // Knöpfe der Live Activity → an die App (JavaScript) weiterreichen
+        // Knöpfe der Live Activity: sofort nativ ausführen (die Web-Ansicht kann bei gesperrtem Bildschirm pausiert sein)
+        // und der App (JavaScript) Bescheid geben, damit ihr Zustand stimmt.
         remoteObserver = NotificationCenter.default.addObserver(forName: strolliRemoteNotification, object: nil, queue: .main) { [weak self] n in
-            guard let action = n.object as? String else { return }
-            self?.notifyListeners("remote", data: ["action": action])
+            guard let self = self, let action = n.object as? String else { return }
+            print("[Strolli] Knopf in der Live Activity: \(action)")
+            if action == "toggle" {
+                let nowPaused = self.togglePause()
+                self.notifyListeners("remote", data: ["action": nowPaused ? "paused" : "resumed"])
+                if #available(iOS 16.2, *) { StrolliActivity.shared.patch(playing: !nowPaused) }
+            } else if action == "skip" {
+                self.halt()
+                self.currentId = ""
+                self.gen += 1
+                self.scheduleDeactivate()
+                self.notifyListeners("remote", data: ["action": "skipped"])
+                if #available(iOS 16.2, *) { StrolliActivity.shared.patch(playing: false, clearAudio: true) }
+            }
         }
         if #available(iOS 16.2, *) { StrolliActivity.endAll() }   // Reste einer abgebrochenen Tour entfernen
     }
@@ -126,6 +140,21 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
     public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         guard utterance === self.utterance else { return }
         finished(currentId)
+    }
+
+    /// Pausiert bzw. setzt fort. Rückgabe: true, wenn jetzt pausiert ist.
+    private func togglePause() -> Bool {
+        let playing = (player.map { $0.rate != 0 } ?? false) || (synth.isSpeaking && !synth.isPaused)
+        if playing {
+            player?.pause()
+            if synth.isSpeaking { synth.pauseSpeaking(at: .word) }
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            return true
+        }
+        activate()
+        if let p = player { p.playImmediately(atRate: rate) }
+        if synth.isPaused { synth.continueSpeaking() }
+        return false
     }
 
     @objc func pause(_ call: CAPPluginCall) {
@@ -243,6 +272,15 @@ final class StrolliActivity {
                                             content: ActivityContent(state: state, staleDate: nil), pushType: nil)
             print("[Strolli] Live Activity gestartet")
         } catch { print("[Strolli] Live Activity konnte nicht starten: \(error)") }
+    }
+
+    /// Nur den Audio-Teil ändern (für die Knöpfe, ohne auf die App zu warten)
+    func patch(playing: Bool, clearAudio: Bool = false) {
+        guard var st = last, let a = activity else { return }
+        st.playing = playing
+        if clearAudio { st.audioTitle = "" }
+        last = st
+        Task { await a.update(ActivityContent(state: st, staleDate: nil)) }
     }
 
     func end() {
