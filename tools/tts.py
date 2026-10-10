@@ -112,8 +112,10 @@ for city, TEXTS in ALL.items():
     run_gemini(TEXTS, manifest, CITY_NAMES.get(city, city.capitalize()), gstate, city)
     keep |= {f for m in manifest["voices"].values() for f in m.values()}
     json.dump(manifest, open(os.path.join(OUT, f"manifest-{city}.json"), "w"), indent=0)
-for f in os.listdir(OUT):
-    if f.endswith(".mp3") and f not in keep: os.remove(os.path.join(OUT, f))
+# Aufräumen nur, wenn Gemini lief – ohne Schlüssel wäre „keep“ leer und alle fertigen (bezahlten) Audios würden gelöscht
+if GEMINI_KEY:
+    for f in os.listdir(OUT):
+        if f.endswith(".mp3") and f not in keep: os.remove(os.path.join(OUT, f))
 # Status für die App (Entwicklerbereich): Wie weit ist Gemini, was ist zuletzt passiert?
 json.dump({"zeit": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()), "gemini_aktiv": bool(GEMINI_KEY),
            "modelle_verfuegbar": gstate["models"], "tageskontingent_erreicht": gstate.get("quota", False), "anfragen_in_diesem_lauf": gstate.get("requests", 0),
