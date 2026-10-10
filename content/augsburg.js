@@ -53,7 +53,7 @@
     teaser:'Die älteste Sozialsiedlung der Welt. Miete: 88 Cent im Jahr.',
     story:[
       'Willkommen in der ältesten bestehenden Sozialsiedlung der Welt. Ab 1516 ließ Jakob Fugger, der wohl reichste Mann seiner Zeit, diese kleine Stadt in der Stadt für bedürftige Augsburger bauen, 1521 machte er sie per Stiftungsbrief dauerhaft. Das Erstaunliche: Sie funktioniert bis heute nach denselben Regeln.',
-      'Die Jahreskaltmiete beträgt seit der Gründung einen rheinischen Gulden, heute umgerechnet 88 Cent. Dafür gibt es Bedingungen: Die Bewohner sprechen täglich drei Gebete für den Stifter und seine Familie, ein Vaterunser, ein Ave Maria und das Glaubensbekenntnis, und übernehmen kleine Aufgaben in der Gemeinschaft. Abends um zehn werden die fünf Tore geschlossen.',
+      'Die Jahreskaltmiete beträgt seit der Gründung einen rheinischen Gulden, heute umgerechnet 88 Cent. Dafür gibt es Bedingungen: Die Bewohner sprechen täglich drei Gebete für den Stifter und seine Familie, ein Vaterunser, ein Ave Maria und das Glaubensbekenntnis, und übernehmen kleine Aufgaben in der Gemeinschaft. Abends um zehn schließt der Nachtwächter das Tor.',
       'Achte auf die Türen. Jeder Klingelzug hat eine andere Form. So konnten die Bewohner ihre Tür auch im Dunkeln ertasten, als es noch keine Straßenbeleuchtung gab. Heute gibt es 67 Häuser mit rund 140 Wohnungen. Für den Besuch zahlst du Eintritt, dafür siehst du eine Museumswohnung und eine Ausstellung im ehemaligen Luftschutzbunker.'],
     fact:'Ein früherer Bewohner war der Maurer Franz Mozart, der Urgroßvater von Wolfgang Amadeus Mozart. Er lebte hier von 1681 bis 1694, eine Gedenktafel erinnert an ihn.',
     look:'Die unterschiedlich geformten Klingelzüge an den Haustüren.' },
@@ -90,7 +90,7 @@
     story:[
       'Herkules kämpft hier mit einer flammenden Keule gegen die siebenköpfige Hydra, das Ungeheuer der griechischen Sage. Für jeden Kopf, den er abschlägt, wachsen zwei neue nach. Geschaffen hat die Figuren der Niederländer Adriaen de Vries, 1602 wurde der Brunnen am damaligen Weinmarkt aufgestellt.',
       'Er ist der jüngste der drei großen Prachtbrunnen an der Hauptachse der Altstadt. Augustus, Merkur und Herkules erzählen zusammen, worauf die Stadt stolz war: ihre römische Gründung, den Handel und die Kraft, die nötig war, um das Wasser zu bändigen.',
-      'Unten am Sockel sitzen Najaden, Wassernymphen. Schau mal genau hin, woher bei ihnen das Wasser kommt. Für das Jahr 1602 ziemlich gewagt.'],
+      'Unten am Sockel sitzen Najaden, Wassernymphen. Schau mal genau hin: Eine wringt ein Tuch aus, eine streift sich das Wasser aus dem Haar, und die dritte gießt es aus einer Kanne.'],
     fact:'Alle drei Prachtbrunnen sind seit 2019 Teil des UNESCO-Welterbes „Augsburger Wassermanagement-System“.',
     look:'Die Najaden am Sockel.' },
 
@@ -116,7 +116,7 @@
     teaser:'Wo das wichtigste Bekenntnis der Lutheraner verlesen wurde.',
     story:[
       'Der Fronhof war das Machtzentrum der Augsburger Bischöfe. Das große Gebäude ist die ehemalige fürstbischöfliche Residenz, heute sitzt hier die Regierung von Schwaben.',
-      'Am 25. Juni 1530 wurde hier Geschichte geschrieben: In der Kapelle der Bischofsresidenz las der sächsische Kanzler Christian Beyer vor Kaiser Karl dem Fünften und dem Reichstag die „Confessio Augustana“ vor, das Augsburger Bekenntnis. Verfasst hatte sie Philipp Melanchthon. Bis heute ist es die wichtigste Bekenntnisschrift der lutherischen Kirchen weltweit.',
+      'Am 25. Juni 1530 wurde hier Geschichte geschrieben: In der Kapitelstube der Bischofsresidenz las der sächsische Kanzler Christian Beyer vor Kaiser Karl dem Fünften und dem Reichstag die „Confessio Augustana“ vor, das Augsburger Bekenntnis. Verfasst hatte sie Philipp Melanchthon. Bis heute ist es die wichtigste Bekenntnisschrift der lutherischen Kirchen weltweit.',
       'Gleich nebenan liegt der Hofgarten, ein kleiner barocker Garten. Ideal für eine kurze Pause im Schatten.'],
     fact:'Durch das Augsburger Bekenntnis tragen lutherische Gemeinden den Namen der Stadt sozusagen um die ganze Welt.',
     look:'Die Gedenktafel am barocken Ostflügel der ehemaligen Residenz.' },
@@ -152,7 +152,7 @@
     teaser:'Das Wasserwerk, das Ingenieure aus ganz Europa bestaunten.',
     story:[
       'Hier am Roten Tor schlug jahrhundertelang das Herz der Augsburger Wasserversorgung. Wasserräder, angetrieben von Kanälen, pumpten Wasser hoch in die Türme. Von dort floss es mit natürlichem Gefälle durch Leitungen zu den Brunnen und in die Häuser.',
-      'Gebaut wurde ab 1416, und 463 Jahre lang versorgte das Wasserwerk die Stadt mit Trinkwasser. Es gilt als ältestes erhaltenes Wasserwerk Mitteleuropas.',
+      'Ab 1416 versorgte das Wasserwerk die Stadt 463 Jahre lang mit Trinkwasser. Es gilt als das älteste Wasserwerk Deutschlands.',
       'Dem mittelalterlichen Roten Tor setzte Elias Holl 1622 ein neues Obergeschoss mit Turmhelm auf. Im Sommer wird im ehemaligen Stadtgraben auf der Freilichtbühne gespielt, eine der schönsten Open-Air-Kulissen Bayerns.'],
     fact:'Seit 2019 ist das Augsburger Wassermanagement-System UNESCO-Welterbe, mit insgesamt 22 Stationen von Kanälen über Wassertürme bis zu den Prachtbrunnen.',
     look:'Die schlanken Türme und das Rote Tor dahinter.' },
@@ -163,7 +163,7 @@
       'Hier unten, wo die Kanäle durch die Gassen rauschen, lebten früher die Handwerker: Gerber, Färber, Müller und Goldschmiede. Sie alle brauchten fließendes Wasser, als Antrieb, zum Waschen und zum Kühlen.',
       'Das stattliche Gebäude ist die Stadtmetzg, von 1606 bis 1609 von Elias Holl gebaut. Unter dem Haus fließt ein Lechkanal hindurch. So wurde das Fleisch gekühlt und die Abfälle gleich weggespült. Hightech im 17. Jahrhundert.',
       'Die Straßen im Viertel heißen Vorderer, Mittlerer und Hinterer Lech, benannt nach den Kanälen. Die Augsburger behaupten gern, ihre Stadt habe mehr Brücken als Venedig. Nachzählen musst du nicht, genieß einfach das Rauschen.'],
-    fact:'Seit über tausend Jahren treiben die Lechkanäle in Augsburg Wasserräder an. Gespeist werden sie vom Lech, der am Hochablass im Süden der Stadt aufgestaut wird.',
+    fact:'Schon seit dem Mittelalter treiben die Lechkanäle in Augsburg Wasserräder an, erwähnt werden sie bereits im Stadtrecht von 1276. Gespeist werden sie vom Lech, der am Hochablass im Süden der Stadt aufgestaut wird.',
     look:'Wo der Kanal unter der Stadtmetzg verschwindet.' },
 
   { id:'synagoge', name:'Synagoge Augsburg', wiki:'Synagoge Augsburg', ll:[48.3664,10.8921], dwell:10,
@@ -217,14 +217,14 @@
       'Der Eiskanal war 1972 Schauplatz einer Premiere: Bei den Olympischen Spielen von München wurde hier zum ersten Mal Kanuslalom olympisch ausgetragen. Dafür baute man die erste künstliche Wildwasserstrecke der Welt.',
       'Bis heute finden hier internationale Wettkämpfe statt, 2022 sogar die Kanuslalom-Weltmeisterschaft. Mit etwas Glück siehst du Kanuten durch die Tore paddeln.',
       'Der Kanal liegt direkt am Hochablass und war früher Teil des dortigen Wasserwerks. Auch er gehört zum UNESCO-Welterbe.'],
-    fact:'Gepaddelt wurde hier schon lange vor Olympia: Kanuten nutzten den Eiskanal bereits seit 1945.',
+    fact:'Gepaddelt wurde hier schon lange vor Olympia: Schon in den Fünfzigerjahren trainierten Kanuten auf dem Eiskanal.',
     look:'Die Slalomtore, die über dem Wasser hängen.' },
 
   { id:'hochablass', name:'Hochablass', wiki:'Hochablass', ll:[48.3400,10.9330], dwell:10,
     teaser:'Hier beginnt das ganze Augsburger Kanalsystem.',
     story:[
       'Am Hochablass beginnt alles: Hier wird der Lech gestaut und Wasser in die Kanäle abgezweigt, die durch die ganze Stadt fließen. Ohne dieses Wehr gäbe es kein rauschendes Lechviertel, keine Wasserräder und keinen Eiskanal.',
-      'Das heutige Wehr entstand bei einem großen Umbau 1912, doch das Wehr ist schon seit über 750 Jahren Teil des Augsburger Wassersystems. Auch der Hochablass ist eine Station des UNESCO-Welterbes.',
+      'Das heutige Wehr entstand bei einem großen Umbau 1912, doch ein Wehr an dieser Stelle ist schon seit dem Jahr 1346 belegt. Auch der Hochablass ist eine Station des UNESCO-Welterbes.',
       'Rundherum liegt der Siebentischwald, ein riesiges Naherholungsgebiet. Im Biergarten am Hochablass kannst du mit Blick aufs Wasser Pause machen.'],
     fact:'Der Lech entspringt in Vorarlberg in Österreich und mündet nördlich von Augsburg in die Donau.',
     look:'Das Wehr, wenn das Wasser über die Kante schießt.' },
@@ -283,13 +283,13 @@
     { id:'wertachbrucker', name:'Wertachbrucker Tor', wiki:'Wertachbrucker Tor', ll:[48.3790,10.8872],
       text:'Das Wertachbrucker Tor im Norden. Elias Holl hat es 1605 um zwei Stockwerke erhöht. Der Name verrät es: Von hier ging es zur Brücke über die Wertach.' },
     { id:'hbf', name:'Hauptbahnhof', wiki:'Augsburg Hauptbahnhof', ll:[48.3655,10.8857],
-      text:'Der Augsburger Hauptbahnhof wurde 1846 eröffnet. Seine Bahnhofshalle ist eine der ältesten noch erhaltenen in Deutschland.' },
+      text:'Der Augsburger Hauptbahnhof wurde 1845 eröffnet. Sein Empfangsgebäude gilt als das älteste, das in einer deutschen Großstadt noch in Betrieb ist.' },
     { id:'fuggerwelser', name:'Fugger und Welser Erlebnismuseum', wiki:'Fugger und Welser Erlebnismuseum', ll:[48.3713,10.8983],
       text:'Hier erzählt ein Museum von den beiden großen Augsburger Handelsfamilien. Die Welser waren so mächtig, dass Kaiser Karl der Fünfte ihnen als Sicherheit für einen Kredit ein Stück Südamerika überließ: Von 1528 bis 1546 beherrschten sie Teile des heutigen Venezuela.' },
     { id:'dioezesan', name:'Diözesanmuseum St. Afra', wiki:'Diözesanmuseum St. Afra', ll:[48.3735,10.8960],
       text:'Im Diözesanmuseum neben dem Dom stehen die originalen Flügel der bronzenen Domtür aus dem 11. Jahrhundert, mit Löwen, Kentauren und biblischen Szenen.' },
     { id:'gignoux', name:'Gignoux-Haus', wiki:'Gignoux-Haus', ll:[48.3652,10.9031],
-      text:'Das Gignoux-Haus ist mit der Kattunfabrikanten-Familie Gignoux verbunden. Anna Barbara Gignoux führte ab 1761 eine große Fabrik für bedruckte Baumwollstoffe und war eine der wichtigsten Unternehmerinnen ihrer Zeit. Die Textilindustrie hat Augsburg lange vor den Fabrikschloten geprägt.' },
+      text:'Das Gignoux-Haus ist mit der Kattunfabrikanten-Familie Gignoux verbunden. Anna Barbara Gignoux führte ab 1760 eine große Fabrik für bedruckte Baumwollstoffe und war eine der wichtigsten Unternehmerinnen ihrer Zeit. Die Textilindustrie hat Augsburg lange vor den Fabrikschloten geprägt.' },
     { id:'goldsaal', name:'Elias-Holl-Platz', ll:[48.3679,10.8999],
       text:'Du bist am Elias-Holl-Platz, benannt nach dem Stadtbaumeister, dem Augsburg Rathaus, Zeughaus, Stadtmetzg und viele Tore verdankt. Kaum ein Baumeister hat eine deutsche Stadt so geprägt wie er.' },
   ],

@@ -21,17 +21,17 @@
   { id:'residenz', name:'Residenz', wiki:'Würzburger Residenz', ll:[49.7930,9.9386], dwell:15,
     teaser:'Ein Schloss für Fürstbischöfe, mit dem größten Deckenfresko der Welt.',
     story:[
-      'Vor dir steht die Würzburger Residenz, eines der bedeutendsten Barockschlösser Europas und seit 1981 Weltkulturerbe. Bauherr war Fürstbischof Johann Philipp Franz von Schönborn, der 1720 beschloss, dass ihm die alte Festung auf dem Berg nicht mehr standesgemäß war. Den Plan entwarf ein junger Mann, der damals noch kaum bekannt war: Balthasar Neumann. Dieser Bau machte ihn zu einem der berühmtesten Baumeister seiner Zeit.',
-      'Das Herzstück ist das Treppenhaus. Neumann überspannte es mit einem riesigen Gewölbe ganz ohne Stützen. Kollegen sollen gewettet haben, dass es einstürzen würde, und Neumann soll angeboten haben, unter dem Gewölbe eine Kanone abfeuern zu lassen. 1752 und 1753 malte der Venezianer Giovanni Battista Tiepolo mit seinem Sohn das Deckenfresko: die vier damals bekannten Erdteile, die dem Fürstbischof huldigen. Mit rund 580 Quadratmetern gilt es als das größte zusammenhängende Deckenfresko der Welt.',
+      'Vor dir steht die Würzburger Residenz, eines der bedeutendsten Barockschlösser Europas und seit 1981 Weltkulturerbe. Bauherr war Fürstbischof Johann Philipp Franz von Schönborn, Die Fürstbischöfe hatten die Festung auf dem Berg gerade verlassen, ihr neues Schlösschen in der Stadt erwies sich aber als baufällig. Also beschloss Schönborn 1720 einen prächtigen Neubau. Die Bauleitung übernahm ein junger Mann, der damals noch kaum bekannt war: Balthasar Neumann. Dieser Bau machte ihn zu einem der berühmtesten Baumeister seiner Zeit.',
+      'Das Herzstück ist das Treppenhaus. Neumann überspannte es mit einem riesigen Gewölbe ganz ohne Stützen. Kollegen sollen gewettet haben, dass es einstürzen würde, und Neumann soll angeboten haben, unter dem Gewölbe eine Kanone abfeuern zu lassen. 1752 und 1753 malte der Venezianer Giovanni Battista Tiepolo mit seinen Söhnen das Deckenfresko: die vier damals bekannten Erdteile, die dem Fürstbischof huldigen. Mit rund 580 Quadratmetern gilt es als das größte zusammenhängende Deckenfresko der Welt.',
       'Wie gut Neumann gebaut hat, zeigte sich am 16. März 1945. Bei dem Luftangriff brannte die Residenz aus, der Dachstuhl stürzte ein, aber das Gewölbe über dem Treppenhaus hielt, und Tiepolos Fresko blieb erhalten.'],
     fact:'Napoleon soll die Residenz das schönste Pfarrhaus Europas genannt haben. Halb spöttisch, halb anerkennend, denn schließlich wohnte hier ein Bischof.',
     look:'Im Treppenhaus Tiepolos Selbstporträt: Er hat sich und Balthasar Neumann in das Fresko hineingemalt. Neumann sitzt in Offiziersuniform auf einem Kanonenrohr.' },
 
-  { id:'mainbruecke', name:'Alte Mainbrücke', wiki:'Alte Mainbrücke (Würzburg)', ll:[49.7928,9.9267], dwell:12,
-    teaser:'Zwölf steinerne Heilige und ein Glas Wein mit Blick auf die Festung.',
+  { id:'mainbruecke', name:'Alte Mainbrücke', wiki:'Alte Mainbrücke', ll:[49.7928,9.9267], dwell:12,
+    teaser:'Zwölf steinerne Figuren und ein Glas Wein mit Blick auf die Festung.',
     story:[
-      'Die Alte Mainbrücke ist die älteste Brücke Würzburgs. Gebaut wurde sie zwischen 1473 und 1543 als Ersatz für eine noch ältere romanische Brücke. Rund siebzig Jahre Bauzeit, das zeigt, wie wichtig und wie schwierig so eine Brücke über den Main damals war.',
-      'Um 1730 bekam sie ihren berühmten Schmuck: zwölf überlebensgroße Heiligenfiguren aus Sandstein. Darunter sind die drei Frankenapostel Kilian, Kolonat und Totnan, Karl der Große und der heilige Nepomuk, der Schutzpatron der Brücken. Wegen dieser Figuren wird sie gern mit der Karlsbrücke in Prag verglichen.',
+      'Die Alte Mainbrücke ist die älteste Brücke Würzburgs. Mit dem Bau begann man im späten 15. Jahrhundert, als Ersatz für eine noch ältere romanische Brücke. Fertig war sie erst nach Jahrzehnten, das zeigt, wie wichtig und wie schwierig so eine Brücke über den Main damals war.',
+      'Um 1730 bekam sie ihren berühmten Schmuck: zwölf überlebensgroße Figuren aus Sandstein, die meisten davon Heilige. Darunter sind die drei Frankenapostel Kilian, Kolonat und Totnan, Karl der Große und der heilige Nepomuk, der Schutzpatron der Brücken. Wegen dieser Figuren wird sie gern mit der Karlsbrücke in Prag verglichen.',
       'Heute ist die Brücke das Wohnzimmer der Würzburger. An warmen Abenden holt man sich an einem der Weinausschänke ein Glas Frankenwein, den Brückenschoppen, und stellt sich damit an die Brüstung. Vor dir der Main, darüber die Festung Marienberg in der Abendsonne.'],
     fact:'In den letzten Kriegstagen 1945 sprengten deutsche Truppen Teile der Brücke, um die anrückenden Amerikaner aufzuhalten. Nach dem Krieg wurde sie wieder aufgebaut.',
     look:'Die Figur des heiligen Kilian mit Bischofsstab und Schwert, dem Zeichen seines Martyriums.' },
@@ -50,7 +50,7 @@
     story:[
       'Der Dom ist dem heiligen Kilian geweiht. Kilian war ein irischer Wandermönch, der mit seinen Gefährten Kolonat und Totnan im späten 7. Jahrhundert nach Würzburg kam, um die Franken zu missionieren. Der Überlieferung nach wurden die drei um das Jahr 689 ermordet. Bis heute verehrt man sie als Frankenapostel.',
       'Der heutige Bau ist im Kern romanisch, er stammt aus dem 11. und 12. Jahrhundert. Im Inneren mischen sich die Epochen: romanische Mauern, gotische Grabdenkmäler der Fürstbischöfe, barocker Stuck. Balthasar Neumann baute später die Schönbornkapelle an, die Grabkapelle der mächtigen Familie Schönborn.',
-      'Am 16. März 1945 brannte auch der Dom aus. Ein Jahr später stürzte das nördliche Langhaus ein. Erst 1967 war der Dom wieder vollständig aufgebaut und geweiht.'],
+      'Am 16. März 1945 brannte auch der Dom aus. Ein Jahr später stürzte die Nordwand des Langhauses ein. Erst 1967 war der Dom wieder vollständig aufgebaut und geweiht.'],
     fact:'Jedes Jahr im Juli feiert Würzburg die Kiliani-Wallfahrtswoche, und die Stadt feiert gleich mit, mit einem großen Volksfest, dem Kiliani.',
     look:'Die Grabdenkmäler der Fürstbischöfe an den Pfeilern im Langhaus. Zwei davon stammen von Tilman Riemenschneider.' },
 
@@ -63,7 +63,7 @@
     fact:'In der Marienkapelle liegt Balthasar Neumann begraben, der Baumeister der Residenz.',
     look:'Adam und Eva am Südportal. Riemenschneider gab ihnen ganz menschliche, fast scheue Gesichter.' },
 
-  { id:'falkenhaus', name:'Falkenhaus', wiki:'Falkenhaus (Würzburg)', ll:[49.7954,9.9298], dwell:5,
+  { id:'falkenhaus', name:'Falkenhaus', wiki:'Falkenhaus', ll:[49.7954,9.9298], dwell:5,
     teaser:'Die schönste Rokokofassade der Stadt, gestiftet von einer Wirtin.',
     story:[
       'Das Falkenhaus fällt sofort auf, mit seiner gelben Fassade voller weißer Stuckornamente. Dass es so aussieht, verdanken wir keinem Fürsten, sondern einer Wirtin. 1735 kaufte der Gastwirt Franz Thomas Meißner das Haus und machte daraus ein Gasthaus. Seine Witwe Barbara ließ 1751 von Stuckateuren aus Oberbayern diese verspielte Rokokofassade anbringen.',
@@ -81,16 +81,16 @@
     fact:'Der Sage nach wünschte sich Walther, dass man auf seinem Grab die Vögel füttert. Deshalb legen Besucher bis heute gern ein paar Krümel auf den Gedenkstein.',
     look:'Den Gedenkstein für Walther im Lusamgärtchen. Oft liegen dort Blumen oder ein paar Körner für die Vögel.' },
 
-  { id:'rathaus', name:'Rathaus Grafeneckart', wiki:'Grafeneckart', ll:[49.7925,9.9288], dwell:6,
+  { id:'rathaus', name:'Rathaus Grafeneckart', wiki:'Grafeneckart', ll:[49.7937,9.9281], dwell:6,
     teaser:'Seit 1316 das Rathaus, mit Hochwassermarken am Tor.',
     story:[
       'Das Rathaus mit dem markanten Turm heißt Grafeneckart. Der Name geht auf einen bischöflichen Beamten zurück, der hier im Mittelalter wohnte. Seit 1316 nutzen die Würzburger Bürger den Bau als Rathaus, also schon seit über siebenhundert Jahren.',
-      'Schau mal an den Torpfosten am Eingang: Dort sind Hochwassermarken angebracht. Die höchste erinnert an das Magdalenenhochwasser vom Juli 1342, eine der schlimmsten Flutkatastrophen in Mitteleuropa. Damals stand der Main hier mitten in der Altstadt.',
-      'Direkt vor dem Rathaus steht der Vierröhrenbrunnen, ein Rokokobrunnen aus den 1760er-Jahren. Die Figuren auf ihm stellen die vier Kardinaltugenden dar, und ganz oben steht die Franconia, die Figur für Franken.'],
-    fact:'Die Hochwassermarken zeigen, wie hoch das Wasser über die Jahrhunderte stand. Einige davon liegen deutlich über deinem Kopf.',
+      'Schau mal an den Torpfosten am Eingang: Dort sind Hochwassermarken angebracht. Sie erinnern an Hochwasser, bei denen der Main bis weit in die Altstadt stand. Das schlimmste davon war wohl das Magdalenenhochwasser im Sommer 1342, eine der größten Flutkatastrophen in Mitteleuropa.',
+      'Direkt vor dem Rathaus steht der Vierröhrenbrunnen, ein Rokokobrunnen, gebaut zwischen 1763 und 1766. Die Figuren auf ihm stellen die vier Kardinaltugenden dar, und ganz oben steht die Franconia, die Figur für Franken.'],
+    fact:'Die Hochwassermarken zeigen, wie hoch das Wasser über die Jahrhunderte stand.',
     look:'Die Hochwassermarken am Tor des Grafeneckart.' },
 
-  { id:'kaeppele', name:'Käppele', wiki:'Käppele (Würzburg)', ll:[49.7847,9.9183], dwell:15,
+  { id:'kaeppele', name:'Käppele', wiki:'Käppele (Würzburg)', ll:[49.7843,9.9219], dwell:15,
     teaser:'Wallfahrtskirche im Weinberg, über einen langen Kreuzweg erreichbar.',
     story:[
       'Das Käppele, die kleine Kapelle, ist in Wahrheit eine prächtige Barockkirche mit zwei Zwiebeltürmen. Ihre Geschichte beginnt ganz bescheiden: 1640, mitten im Dreißigjährigen Krieg, stellte ein Mainfischer in seinem Weinberg einen Bildstock mit einer Pietà auf, Maria mit dem toten Jesus. Immer mehr Menschen kamen zum Beten, und so entstand erst eine Kapelle, dann diese Kirche.',
@@ -99,14 +99,14 @@
     fact:'Die Stufen lohnen sich auch ohne Kirchenbesuch: Von der Terrasse vor dem Käppele siehst du über den Main auf die Altstadt und hinüber zur Festung.',
     look:'Die kleinen Kapellen mit den Kreuzwegstationen am Treppenweg.' },
 
-  { id:'hofgarten', name:'Hofgarten', wiki:'Hofgarten Würzburg', ll:[49.7915,9.9420], dwell:12,
+  { id:'hofgarten', name:'Hofgarten', ll:[49.7915,9.9420], dwell:12,
     teaser:'Barocker Garten hinter der Residenz, auf den alten Stadtbastionen.',
     story:[
       'Hinter der Residenz liegt der Hofgarten, zusammen mit dem Schloss Teil des Weltkulturerbes. Weil die Residenz direkt an der alten Stadtbefestigung steht, war für einen großen Barockgarten eigentlich kein Platz. Die Gärtner machten aus der Not eine Tugend und nutzten die Bastionen der Stadtmauer: Terrassen, Treppen und Rampen führen hinauf und hinunter.',
       'Überall stehen verspielte Figuren, vor allem kleine Putten, die der Hofbildhauer Johann Peter Wagner geschaffen hat. Es gibt eine Orangerie, Rosenbeete und einen Kräuter- und Obstgarten.',
-      'Im südlichen Teil wird es dann plötzlich natürlicher. Dort geht der Garten in einen englischen Landschaftsgarten über, mit geschwungenen Wegen und großen alten Bäumen. Ein schöner Ort, um nach all dem Barock ein bisschen durchzuatmen.'],
+      'Zur Stadt hin wird es dann plötzlich natürlicher. Dort geht der Garten in einen kleinen englischen Landschaftsgarten über, mit geschwungenen Wegen und großen alten Bäumen. Ein schöner Ort, um nach all dem Barock ein bisschen durchzuatmen.'],
     fact:'Der Hofgarten ist frei zugänglich und kostet keinen Eintritt.',
-    look:'Die Putten auf den Pfeilern am Eingang. Jede hat eine andere Pose.' },
+    look:'Die Putten zwischen den Laubengängen im Ostgarten. Jede hat eine andere Pose.' },
 
   { id:'juliusspital', name:'Juliusspital', wiki:'Juliusspital', ll:[49.7979,9.9323], dwell:8,
     teaser:'Ein Krankenhaus, das sich mit Wein finanziert.',
@@ -114,10 +114,10 @@
       'Das Juliusspital ist eine ungewöhnliche Mischung: Spital, Altenheim und eines der größten Weingüter Deutschlands. Gegründet hat es Fürstbischof Julius Echter im 16. Jahrhundert als Stiftung für Kranke, Arme und Alte.',
       'Damit die Stiftung dauerhaft Geld hat, bekam sie Land und Weinberge. Dieses Prinzip funktioniert bis heute: Die Erlöse aus dem Wein helfen, das Spital zu finanzieren. Wer hier ein Glas trinkt, tut also gewissermaßen ein gutes Werk.',
       'Im Innenhof mit seinen Barockflügeln findest du eine Weinstube. Unter dem Gebäude liegen ausgedehnte Weinkeller, in denen die Weine in großen Holzfässern reifen.'],
-    fact:'Julius Echter war eine prägende Figur für Würzburg: Er gründete auch die Universität neu und ließ in der Region hunderte Kirchen bauen, an ihren spitzen Türmen erkennt man sie bis heute.',
-    look:'Den barocken Innenhof mit dem Brunnen. Ein ruhiger Ort mitten in der Stadt.' },
+    fact:'Julius Echter war eine prägende Figur für Würzburg: Er gründete auch die Universität neu und ließ in der Region hunderte Kirchen bauen oder umbauen, an ihren spitzen Türmen erkennt man sie bis heute.',
+    look:'Den Garten hinter dem barocken Fürstenbau mit dem Vierströmebrunnen. Ein ruhiger Ort mitten in der Stadt.' },
 
-  { id:'buergerspital', name:'Bürgerspital', wiki:'Bürgerspital zum Heiligen Geist (Würzburg)', ll:[49.7961,9.9326], dwell:8,
+  { id:'buergerspital', name:'Bürgerspital', wiki:'Bürgerspital Weingut', ll:[49.7961,9.9326], dwell:8,
     teaser:'Seit 1316 Stiftung und Weingut, Heimat des Bocksbeutels.',
     story:[
       'Das Bürgerspital zum Heiligen Geist geht auf das Jahr 1316 zurück. Damals schenkten Johannes von Steren und seine Frau Mergardis der Stadt ihren Besitz, um Kranke, Arme und Bedürftige zu versorgen. Wie beim Juliusspital finanziert sich die Stiftung bis heute auch mit Wein.',
@@ -126,28 +126,28 @@
     fact:'Im Keller des Bürgerspitals lagert noch eine Flasche Steinwein vom Jahrgang 1540. Sie gilt als einer der ältesten Weine Deutschlands.',
     look:'Die Bocksbeutel in der Weinstube. Erkennst du die typische flache Form?' },
 
-  { id:'roentgen', name:'Röntgen-Gedächtnisstätte', wiki:'Röntgen-Gedächtnisstätte', ll:[49.8003,9.9337], dwell:10,
+  { id:'roentgen', name:'Röntgen-Gedächtnisstätte', wiki:'Röntgen-Gedächtnisstätte', ll:[49.8000,9.9309], dwell:10,
     teaser:'Hier wurden die Röntgenstrahlen entdeckt.',
     story:[
       'In diesem Gebäude, dem früheren Physikalischen Institut der Universität, machte Wilhelm Conrad Röntgen im November 1895 eine Entdeckung, die die Medizin verändert hat. Bei Versuchen mit einer Vakuumröhre bemerkte er, dass ein Schirm in einiger Entfernung zu leuchten begann, obwohl die Röhre abgedeckt war. Er hatte eine neue Art von Strahlen gefunden.',
       'Röntgen nannte sie X-Strahlen, weil er nicht wusste, was sie waren. Wochenlang arbeitete er fast allein und ohne Pause im Labor. Eines der ersten Bilder zeigte die Hand seiner Frau Anna Bertha, mit dem Ehering am Finger.',
       'Schon wenige Monate später wurden die Strahlen in Krankenhäusern genutzt. 1901 bekam Röntgen dafür den allerersten Nobelpreis für Physik. Ein Patent hat er nie angemeldet, die Entdeckung sollte allen zugutekommen.'],
-    fact:'Im Englischen heißen die Strahlen bis heute X-rays. Im Deutschen dagegen sind sie nach ihrem Entdecker benannt.',
+    fact:'In vielen Sprachen heißen die Strahlen bis heute X-Strahlen, so wie Röntgen sie getauft hat. Im Deutschen dagegen sind sie nach ihrem Entdecker benannt.',
     look:'Das historische Labor in der Gedächtnisstätte, in dem Röntgen seine Entdeckung machte.' },
 
   { id:'alterkranen', name:'Alter Kranen', wiki:'Alter Kranen (Würzburg)', ll:[49.7968,9.9269], dwell:8,
     teaser:'Ein Barockkran am Main, gebaut vom Sohn des Residenz-Baumeisters.',
     story:[
-      'Der Alte Kranen am Mainufer war einmal ein Hightech-Gerät. Mit ihm wurden Waren von den Mainschiffen gehoben, vor allem Weinfässer. Gebaut wurde er in den 1770er-Jahren von Franz Ignaz Michael Neumann, dem Sohn von Balthasar Neumann.',
+      'Der Alte Kranen am Mainufer war einmal ein Hightech-Gerät. Mit ihm wurden Waren von den Mainschiffen gehoben, vor allem Weinfässer. Gebaut wurde er zwischen 1767 und 1773 von Franz Ignaz Michael Neumann, dem Sohn von Balthasar Neumann.',
       'Angetrieben wurde der Kran ganz ohne Motor: Im Inneren liefen Männer in großen Treträdern, ähnlich wie Hamster im Rad. So konnten sie schwere Lasten anheben und auf die Kaimauer schwenken.',
       'Heute ist der Kran ein Denkmal, und gleich daneben sitzt man in einer Weinstube direkt am Wasser. Ein schöner Ort, um den Schiffen auf dem Main zuzuschauen.'],
-    fact:'Am Alten Kranen wird auch der Pegel des Mains gemessen. An der Wand sind Hochwassermarken aus dem 20. Jahrhundert zu sehen.',
+    fact:'Am Alten Kranen wird auch der Pegel des Mains gemessen. An der Wand siehst du eine Pegellatte und Marken früherer Hochwasser.',
     look:'Die Hochwassermarken an der Wand des Krans.' },
   ],
 
   /* „Schöne Wege“: Parks, Ufer, Gassen – ohne Ansage, nur damit die Route dort entlangführt */
   scenic:[
-    {id:'hofgarten_sued', name:'Hofgarten, Landschaftsgarten', ll:[49.7905,9.9418], weight:1.5},
+    {id:'hofgarten_park', name:'Hofgarten', ll:[49.7905,9.9418], weight:1.5},
     {id:'ringpark_ost',   name:'Ringpark',                     ll:[49.7962,9.9405], weight:1.4},
     {id:'ringpark_nord',  name:'Ringpark am Bahnhof',          ll:[49.8005,9.9385]},
     {id:'mainkai',        name:'Mainkai',                      ll:[49.7955,9.9265], weight:1.4},
@@ -155,8 +155,8 @@
     {id:'hofstrasse',     name:'Hofstraße',                    ll:[49.7929,9.9340]},
   ],
   wayside:[
-    { id:'vierroehren', name:'Vierröhrenbrunnen', wiki:'Vierröhrenbrunnen', ll:[49.7927,9.9293],
-      text:'Der Vierröhrenbrunnen vor dem Rathaus. Ganz oben steht die Franconia, darunter die vier Kardinaltugenden: Weisheit, Gerechtigkeit, Tapferkeit und Mäßigung. Gebaut wurde er in den 1760er-Jahren.' },
+    { id:'vierroehren', name:'Vierröhrenbrunnen', ll:[49.7934,9.9285],
+      text:'Der Vierröhrenbrunnen vor dem Rathaus. Ganz oben steht die Franconia, darunter die vier Kardinaltugenden: Weisheit, Gerechtigkeit, Tapferkeit und Mäßigung. Gebaut wurde er zwischen 1763 und 1766.' },
     { id:'lusam', name:'Lusamgärtchen', ll:[49.7945,9.9310],
       text:'Hinter dem Neumünster liegt das stille Lusamgärtchen. Hier soll Walther von der Vogelweide begraben sein, der berühmteste Minnesänger des Mittelalters.' },
     { id:'frankonia', name:'Frankoniabrunnen', wiki:'Frankoniabrunnen', ll:[49.7926,9.9368],
