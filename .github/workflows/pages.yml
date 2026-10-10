@@ -6,7 +6,7 @@ on:
   schedule:
     - cron: '17 3 * * *'   # jede Nacht: fehlende Gemini-Audios nachproduzieren
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
@@ -46,6 +46,14 @@ jobs:
           python tools/tts.py texts.json audio
           ls audio | wc -l
           du -sh audio
+      - name: Audio-Status ins Repo schreiben (Branch audio-status, zur Fehlersuche)
+        if: always()
+        run: |
+          mkdir -p /tmp/st && cp audio/status.json /tmp/st/ 2>/dev/null || echo '{}' > /tmp/st/status.json
+          for f in audio/manifest-*.json; do python3 -c "import json,sys; m=json.load(open(sys.argv[1])); print(sys.argv[1], {k:len(v) for k,v in m['voices'].items()})" "$f"; done > /tmp/st/manifests.txt || true
+          cd /tmp/st && git init -q && git checkout -q -b audio-status
+          git -c user.name=github-actions -c user.email=actions@github.com add . && git -c user.name=github-actions -c user.email=actions@github.com commit -q -m "Audio-Status $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" audio-status
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
