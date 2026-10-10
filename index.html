@@ -791,10 +791,15 @@ const Speech = {
   skip(){ const it=this.playing; if(!it) return; const cb=it.onend; this.stop(); if(cb) cb(); },
   setRate(r){ state.settings.rate=r; saveSettings(); this.el.playbackRate=r; updatePlayer(); },
   /* say(text, {key, tag, interrupt, onend}) – key verweist auf eine KI-Audiodatei */
-  say(text,{key=null,tag='misc',interrupt=true,onend,title='',ref=null}={}){
+  /* keep:true (Begrüßung) wird nie abgeschnitten: Eine neue Ansage mit interrupt wartet dann, bis sie fertig ist,
+     verwirft aber alles andere, was noch in der Warteschlange stand. */
+  say(text,{key=null,tag='misc',interrupt=true,onend,title='',ref=null,keep=false}={}){
     if(!state.settings.audio){ onend&&onend(); return; }
-    if(interrupt) this.stop(true);
-    this.queue.push({text,src:this.srcFor(key),tag,onend,title,ref});
+    if(interrupt){
+      if(this.playing&&this.playing.keep) this.queue=this.queue.filter(q=>q.keep);
+      else this.stop(true);
+    }
+    this.queue.push({text,src:this.srcFor(key),tag,onend,title,ref,keep});
     if(!this.playing) this._next();
     updatePlayBtn();
   },
@@ -916,8 +921,9 @@ function updateMini(){
   const set=(eb,title,dist,eta,hint)=>{ $('#miniEyebrow').textContent=eb; $('#miniTarget').textContent=title;
     $('#miniRight').hidden=!dist; $('#miniDist').textContent=dist||''; $('#miniEta').textContent=eta||''; $('#miniHint').textContent=hint; };
   if(!$('#viewNav').hidden){
-    const nav=state.nav, leg=nav&&state.legs[nav.legIdx]; if(!leg) return;
-    set(leg.target.home?'Zurück zum Start':`Stopp ${nav.legIdx+1} von ${state.tour.length}`, leg.target.name, $('#navDist').textContent, $('#navEta').textContent, 'Nach oben wischen für das Menü');
+    const nav=state.nav, leg=nav&&state.legs&&state.legs[nav.legIdx];
+    if(!leg) set(CITY.name+(CITY.tagline?' · '+CITY.tagline:''), 'Deine Stadtführung', '', '', 'Nach oben wischen, um deine Stadtführung zu starten');
+    else set(leg.target.home?'Zurück zum Start':`Stopp ${nav.legIdx+1} von ${state.tour.length}`, leg.target.name, $('#navDist').textContent, $('#navEta').textContent, 'Nach oben wischen für das Menü');
   } else if(!$('#viewPreview').hidden){
     set('Deine Tour', $('#pvTitle').textContent, '', '', 'Nach oben wischen, um die Tour zu starten');
   } else if(!$('#viewDone').hidden){
@@ -1016,10 +1022,18 @@ function loadCityData(entry){
   return new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src=entry.file;
     sc.onload=()=>res(globalThis.CITY_DATA[entry.id]); sc.onerror=()=>rej(new Error('Stadt konnte nicht geladen werden')); document.head.appendChild(sc); });
 }
+/* Laufende Tour ohne Abschlussbildschirm abbrechen (z. B. beim Stadtwechsel im Entwicklermodus) */
+function abortTour(){
+  stopTracking(); Speech.stop();
+  state.nav=null; state.storyCtx=null;
+  $('#banner').hidden=true; $('#toast').hidden=true; $('#rerouteBtn').hidden=true; $('#simBar').hidden=true; $('#endConfirm').hidden=true;
+  state.storyMin=false; $('#story').hidden=true; updatePlayer();
+}
 async function selectCity(id){
-  if(state.nav) return;
   const entry=cityEntry(id)||CITIES[0];
-  try{ CITY=normalizeCity(await loadCityData(entry)); }catch(e){ notice('Die Stadt konnte nicht geladen werden. Bitte Internetverbindung prüfen.'); return; }
+  let data; try{ data=await loadCityData(entry); }catch(e){ notice('Die Stadt konnte nicht geladen werden. Bitte Internetverbindung prüfen.'); return; }
+  if(state.nav||state.sim) abortTour();
+  CITY=normalizeCity(data);
   const s=state.settings;
   s.themesByCity=s.themesByCity||{};
   if(s.cityId && s.cityId!==entry.id) s.themesByCity[s.cityId]=s.themes;      // Themenauswahl pro Stadt merken
@@ -1030,6 +1044,7 @@ async function selectCity(id){
   if(!['me','pick',...CITY.starts.map(x=>x.id)].includes(s.startKind)) s.startKind=CITY.starts[0].id;
   saveSettings();
   state.tour=null; state.legs=null; state.pickLL=null; state.simPos=null; clearStopMarkers(); drawRoute();
+  showView('viewPlan');
   renderCityUI();
   Speech.loadManifest(entry.id);
   wikiReady=Promise.race([ enrichFromWikipedia().catch(()=>{}), new Promise(r=>setTimeout(r,3500)) ]);
@@ -1189,8 +1204,8 @@ async function startTour(simulate){
   requestWake();
   const first=state.legs[0].target;
   Speech.unlock();
-  Speech.say(PHRASES.intro(CITY),{key:'intro',tag:'intro',title:'Willkommen in '+CITY.name});
-  if(first.stop) Speech.say(PHRASES.first(first.stop),{key:'first:'+first.stop.id,tag:'intro',interrupt:false,title:'Willkommen in '+CITY.name});
+  Speech.say(PHRASES.intro(CITY),{key:'intro',tag:'intro',keep:true,title:'Willkommen in '+CITY.name});
+  if(first.stop) Speech.say(PHRASES.first(first.stop),{key:'first:'+first.stop.id,tag:'intro',keep:true,interrupt:false,title:'Willkommen in '+CITY.name});
   if(simulate){
     state.sim={dist:0, paused:false, last:performance.now(), timer:setInterval(simTick,200)};
     syncSimBar();
@@ -1364,7 +1379,7 @@ function simTick(){
   const sim=state.sim, nav=state.nav; if(!sim||!nav) return;
   const now=performance.now(), dt=(now-sim.last)/1000; sim.last=now;
   if(state.storyCtx&&state.storyCtx.mode==='arrival') return;
-  if(Speech.busy() && Speech.tag && Speech.tag.startsWith('story')) return;
+  if(Speech.busy() && Speech.tag && (Speech.tag.startsWith('story')||Speech.tag==='intro')) return;
   const leg=state.legs[nav.legIdx]; if(!leg) return;
   if(sim.paused||sim.teleported) return;
   const v=(state.settings.mode==='bike'? 4.5 : 1.4) * (+state.settings.simSpeed||5); // m/s
