@@ -778,9 +778,11 @@ async function routeSpecs(origin,specs,mode){
 /* KI-Stimme: vorab erzeugte MP3s (audio/manifest.json). Fehlt eine Datei, spricht die Gerätestimme. */
 /* In der iPhone-App spielt ein natives Plugin (native/ios-src/StrolliNative.swift) die Audios ab:
    Musik anderer Apps läuft dann weiter (wird nur während der Ansage leiser), und es gibt die Live Activity. */
-let _nAudio;
-const nAudio = () => { if(_nAudio!==undefined) return _nAudio;
-  try{ _nAudio = NATIVE && window.Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('StrolliAudio') ? Capacitor.registerPlugin('StrolliAudio') : null; }catch(e){ _nAudio=null; }
+/* Das Plugin wird in der App erst nach dem Capacitor-Kern registriert; isPluginAvailable/registerPlugin kennen es deshalb nicht.
+   Das von Capacitor eingefügte Objekt Capacitor.Plugins.StrolliAudio funktioniert aber direkt. */
+let _nAudio=null;
+const nAudio = () => { if(_nAudio) return _nAudio;
+  try{ const P=NATIVE && window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.StrolliAudio; if(P && typeof P.play==='function') _nAudio=P; }catch(e){}
   return _nAudio; };
 const Speech = {
   voice:null, tag:null, queue:[], playing:null, manifest:null, _seq:0,
