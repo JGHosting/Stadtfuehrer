@@ -51,6 +51,10 @@ public struct StrolliSkipIntent: LiveActivityIntent {
 
 // MARK: - Aussehen
 
+/// Knöpfe vorerst aus: iOS findet die Knopf-Aktionen bei Xcode-Testinstallationen (iOS 27 Beta) nicht
+/// („There is no metadata for StrolliToggleAudioIntent“). Mit TestFlight/App-Store-Build erneut testen.
+private let strolliShowButtons = false
+
 private let strolliPine = Color(red: 0.11, green: 0.25, blue: 0.20)
 private let strolliRed = Color(red: 0.86, green: 0.33, blue: 0.27)
 private let strolliCream = Color(red: 0.96, green: 0.94, blue: 0.90)
@@ -73,7 +77,7 @@ struct StrolliAudioControls: View {
                 .minimumScaleFactor(0.85)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 4)
-            if !s.audioTitle.isEmpty {
+            if strolliShowButtons && !s.audioTitle.isEmpty {
                 Button(intent: StrolliToggleAudioIntent()) {
                     Image(systemName: s.playing ? "pause.fill" : "play.fill")
                         .font(.body.weight(.bold))
