@@ -19,7 +19,7 @@ Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit 
 - Karte: OpenFreeMap (OpenStreetMap-Daten) mit MapLibre
 - Routing: routing.openstreetmap.de (OSRM, betrieben von FOSSGIS) – Fair-Use, für einen Prototyp okay; für die Store-Version eigenen Server aufsetzen
 - Fotos & genaue Koordinaten: Wikipedia-API
-- Vorlesen: vorab erzeugte KI-Audios (Gemini, Katja/Conrad), Gerätestimme als Ersatz
+- Vorlesen: vorab erzeugte KI-Audios (Gemini)
 
 ## Grenzen des Prototyps
 - Als Web-App läuft die Standortverfolgung nur bei eingeschaltetem Bildschirm (die App hält ihn wach).
@@ -29,7 +29,7 @@ Die Vorlese-Texte stehen in den Stadtdateien (`content/<stadt>.js`) und `content
 daraus MP3s im Ordner `audio/` – nur für neue oder geänderte Texte:
 - **Gemini** (Hauptstimme, bezahlter Zugang, Schlüssel als Secret `GEMINI_API_KEY`). Kostenbremse: max. 150 Anfragen pro Lauf.
   Lange Erzeugung läuft nachts, per Hand gestartet oder bei Commits mit `[audio]` in der Nachricht.
-- **Katja und Conrad** (Microsoft, edge-tts) als Ersatz, falls eine Gemini-Datei fehlt.
+- Fehlt ein Gemini-Audio noch, zeigt die App den Text nur an (keine Ersatzstimme).
 Den Stand zeigt die App im Entwicklerbereich unter „KI-Audios“ (`audio/status.json`).
 
 ## Neue Stadt hinzufügen

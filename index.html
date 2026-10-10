@@ -309,15 +309,7 @@ details[open].settings summary::after{content:" ▴"}
     <details class="settings">
       <summary>Audio-Einstellungen</summary>
       <div class="settings-body">
-        <div class="field"><span class="label">Stimme</span>
-          <div class="seg" id="segVoice">
-            <button type="button" data-v="gemini">Gemini</button>
-            <button type="button" data-v="katja">Katja</button>
-            <button type="button" data-v="conrad">Conrad</button>
-            <button type="button" data-v="device">Gerät</button>
-          </div>
-          <p class="hint" id="voiceStatus"></p>
-        </div>
+        <p class="hint" id="voiceStatus"></p>
         <label class="toggle"><span>Geschichten bei Ankunft vorlesen</span><input type="checkbox" id="optAutoplay"></label>
         <label class="toggle"><span>Erzählungen am Wegesrand</span><input type="checkbox" id="optWayside"></label>
         <label class="toggle"><span>Abbiegehinweise ansagen<small>Standardmäßig aus. Die Pfeile oben zeigen dir immer den Weg.</small></span><input type="checkbox" id="optTurns"></label>
@@ -775,7 +767,8 @@ async function routeSpecs(origin,specs,mode){
 /* =====================================================================
    Sprachausgabe
    ===================================================================== */
-/* KI-Stimme: vorab erzeugte MP3s (audio/manifest.json). Fehlt eine Datei, spricht die Gerätestimme. */
+/* KI-Stimme: vorab erzeugte Gemini-MP3s (audio/manifest-<stadt>.json). Fehlt eine Datei (noch nicht eingesprochen),
+   wird dieser Text einfach nicht vorgelesen – angezeigt wird er trotzdem. */
 /* In der iPhone-App spielt ein natives Plugin (native/ios-src/StrolliNative.swift) die Audios ab:
    Musik anderer Apps läuft dann weiter (wird nur während der Ansage leiser), und es gibt die Live Activity. */
 /* Das Plugin wird in der App erst nach dem Capacitor-Kern registriert; isPluginAvailable/registerPlugin kennen es deshalb nicht.
@@ -831,9 +824,9 @@ const Speech = {
     fetch(`${AUDIO_BASE}manifest-${cityId}.json`,{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(m=>{ if(CITY&&CITY.id===cityId){ this.manifest=m; showVoiceStatus(); } }).catch(()=>{});
   },
   srcFor(key){
-    const v=state.settings.voice; if(!key||v==='device'||!this.manifest||!this.manifest.voices) return null;
-    for(const vid of [v,'katja']){ const f=this.manifest.voices[vid]&&this.manifest.voices[vid][key]; if(f) return AUDIO_BASE+f; }
-    return null;
+    if(!key||!this.manifest||!this.manifest.voices) return null;
+    const f=this.manifest.voices.gemini&&this.manifest.voices.gemini[key];
+    return f? AUDIO_BASE+f : null;
   },
   pause(){ if(!this.playing||this.paused) return; this.paused=true;
     const N=nAudio(); if(N) N.pause().catch(()=>{});
@@ -874,16 +867,8 @@ const Speech = {
     } else this._device(it);
     updatePlayBtn();
   },
-  _device(it){
-    const N=nAudio();
-    if(N){ N.speak({text:PHRASES.applyPhonetic(PHRASES.spoken(it.text)),id:it.id,rate:state.settings.rate||1}).catch(()=>{ if(this.playing===it) this._done(); }); return; }
-    if(!this.ok){ this._done(); return; }
-    const parts=PHRASES.applyPhonetic(PHRASES.spoken(it.text)).replace(/\s+/g,' ').match(/[^.!?…]+[.!?…]*["“”]?\s*/g)||[it.text]; const cs=[]; let cur='';
-    for(const p of parts){ if(cur&&(cur+p).length>230){ cs.push(cur.trim()); cur=p; } else cur+=p; } if(cur.trim()) cs.push(cur.trim());
-    cs.forEach((c,i)=>{ const u=new SpeechSynthesisUtterance(c); u.lang='de-DE'; if(this.voice) u.voice=this.voice; u.rate=state.settings.rate||1;
-      if(i===cs.length-1) u.onend=u.onerror=()=>{ if(this.playing===it) this._done(); };
-      speechSynthesis.speak(u); });
-  },
+  /* Ohne KI-Audio (noch nicht eingesprochen oder Ladefehler): nichts vorlesen, nur weiter in der Warteschlange */
+  _device(it){ setTimeout(()=>{ if(this.playing===it) this._done(); },0); },
   _done(){ const it=this.playing; this.playing=null; if(it&&it.onend) it.onend(); this._next(); },
   busy(){ return !!this.playing || this.queue.length>0; },
   stop(silent){
@@ -898,11 +883,11 @@ Speech.init();
 
 function showVoiceStatus(){
   const m=Speech.manifest, el=$('#voiceStatus'); if(!el) return;
-  if(!m||!m.voices){ el.textContent='KI-Audios noch nicht verfügbar – es spricht die Gerätestimme.'; return; }
-  const total=Object.keys(m.voices.katja||{}).length, g=Object.keys(m.voices.gemini||{}).length;
-  el.textContent= !g? 'Gemini-Audios werden noch erzeugt. Bis dahin spricht Katja.'
-    : g<total? `Gemini: ${g} von ${total} Texten fertig. Der Rest wird automatisch nachproduziert, bis dahin springt Katja ein.`
-    : `Gemini: alle ${total} Texte fertig.`;
+  const total=CITY? Object.keys(PHRASES.items(CITY)).length : 0;
+  const g=m&&m.voices&&m.voices.gemini? Object.keys(m.voices.gemini).length : 0;
+  el.hidden = !!total && g>=total;
+  el.textContent= !g? `Die Stimme für ${CITY?CITY.name:'diese Stadt'} wird gerade eingesprochen. Bis dahin kannst du alle Geschichten lesen.`
+    : `Die Stimme wird gerade noch eingesprochen (${g} von ${total} Texten). Was noch fehlt, kannst du vorerst lesen.`;
 }
 /* =====================================================================
    Karte
@@ -1069,8 +1054,7 @@ function initPlanUI(){
   ck('#loopToggle','loop');
   const st=$('#simToggle'); st.checked=!!state.settings.sim;
   st.onchange=()=>setSimMode(st.checked,true); ck('#optAutoplay','autoplay'); ck('#optWayside','wayside'); ck('#optTurns','turns');
-  $('#testVoice').onclick=()=>{ Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); };
-  bindSeg('#segVoice','voice',()=>{ Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); });
+  $('#testVoice').onclick=()=>{ if(!Speech.srcFor('test')){ notice('Die Stimme für '+CITY.name+' wird gerade noch eingesprochen.'); return; } Speech.unlock(); Speech.say(PHRASES.test(CITY),{key:'test'}); };
   $('#planBtn').onclick=doPlan;
   const dr=$('#devRouting'); dr.value=store.get('devRouting','');
   dr.onchange=()=>{ store.set('devRouting',dr.value.trim()); notice(dr.value.trim()? 'Eigener Routing-Server eingetragen.' : 'Zurück zum FOSSGIS-Routing.'); };
@@ -1622,6 +1606,7 @@ $('#storyMinBtn').onclick=minimizeStory;
 $('#storyPlay').onclick=()=>{
   const ctx=state.storyCtx; if(!ctx) return;
   if(Speech.playing && Speech.playing.ref===ctx.s){ Speech.paused? Speech.resume() : Speech.pause(); updatePlayBtn(); return; }
+  if(!Speech.srcFor((ctx.s.story?'story:':'way:')+ctx.s.id)){ notice('Diese Geschichte wird gerade noch eingesprochen. Du kannst sie schon lesen.'); return; }
   if(!state.settings.audio){ state.settings.audio=true; saveSettings(); updateAudioBtn(); }
   Speech.unlock();
   if(ctx.s.story) Speech.say(PHRASES.story(ctx.s),{key:'story:'+ctx.s.id,tag:'story:'+ctx.s.id,title:ctx.s.name,ref:ctx.s});

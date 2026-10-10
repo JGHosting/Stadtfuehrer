@@ -41,7 +41,6 @@ jobs:
           GEMINI_MAX_REQUESTS: '150'
         run: |
           which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
-          pip install --quiet "edge-tts>=7.2"
           node tools/texts.mjs > texts.json
           python tools/tts.py texts.json audio
           ls audio | wc -l

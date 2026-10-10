@@ -1,12 +1,11 @@
-"""Erzeugt Audios für alle Vorlese-Texte.
+"""Erzeugt die Audios für alle Vorlese-Texte mit Gemini-TTS (Stadtführer-Regieanweisung).
 
-1. Gemini-TTS (wenn GEMINI_API_KEY gesetzt ist): ausdrucksstarke Stimme mit Stadtführer-Regieanweisung.
-   Das Gratis-Kontingent ist begrenzt. Was heute nicht fertig wird, erzeugt der nächste Lauf
-   (der Workflow läuft zusätzlich jede Nacht). Fertige Dateien bleiben im Cache.
-2. Microsoft-Neural-Stimmen über edge-tts: immer komplett, dienen auch als Ersatz für fehlende Gemini-Audios.
+Das Tageskontingent ist begrenzt. Was heute nicht fertig wird, erzeugt der nächste Lauf
+(der Workflow läuft zusätzlich jede Nacht). Fertige Dateien bleiben im Cache. Texte ohne Audio
+zeigt die App nur an, ohne sie vorzulesen. Alte Dateien anderer Stimmen werden am Ende gelöscht.
 
 Dateiname = Hash aus Stimme + Text, geänderte Texte werden also automatisch neu erzeugt."""
-import asyncio, base64, hashlib, json, os, subprocess, sys, time, urllib.request, urllib.error
+import base64, hashlib, json, os, subprocess, sys, time, urllib.request, urllib.error
 
 ALL = json.load(open(sys.argv[1], encoding="utf-8"))   # { stadt: { schlüssel: text } }
 OUT = sys.argv[2]
@@ -105,52 +104,11 @@ def run_gemini(TEXTS, manifest, city_name, state, city):
     state.setdefault("cities", {})[city] = {"fertig": len(m), "gesamt": len(TEXTS), "neu_in_diesem_lauf": done}
     manifest["voices"]["gemini"] = m
 
-# ---------------------------------------------------------------- edge-tts
-# Rein deutsche Stimmen: Die „Multilingual“-Stimmen raten die Sprache pro Satz und lesen kurze Titel oft englisch.
-EDGE_VOICES = {"katja":  ["de-DE-KatjaNeural"],
-               "conrad": ["de-DE-ConradNeural"]}
-
-# Die rein deutschen Microsoft-Stimmen lesen englische Wörter deutsch („Funfass“). Für sie wird vorher lautschriftlich umgeschrieben.
-# Gemini bekommt den Originaltext, es erkennt englische Wörter selbst.
-PHONETIC = json.load(open("phonetic.json", encoding="utf-8")) if os.path.exists("phonetic.json") else []
-import re as _re
-def phonetic(text):
-    for pat, rep_ in PHONETIC: text = _re.sub(pat, rep_, text)
-    return text
-
-async def run_edge(TEXTS, manifest):
-    import edge_tts
-    sem = asyncio.Semaphore(4)
-    async def render(key, cands, text, path):
-        async with sem:
-            last = None
-            for v in cands:
-                for attempt in range(3):
-                    try:
-                        await edge_tts.Communicate(text, v, rate="-4%").save(path + ".tmp")
-                        os.replace(path + ".tmp", path); return
-                    except Exception as e:
-                        last = e; await asyncio.sleep(2 + attempt * 3)
-            raise RuntimeError(f"edge-tts fehlgeschlagen bei {key}: {last}")
-    for vid, cands in EDGE_VOICES.items():
-        m, jobs, keys = {}, [], []
-        for key, text in TEXTS.items():
-            text = phonetic(text)
-            fname = f"{vid}-" + hashlib.sha1(f"{cands[0]}|{text}".encode()).hexdigest()[:16] + ".mp3"
-            m[key] = fname; path = os.path.join(OUT, fname)
-            if not os.path.exists(path) or os.path.getsize(path) < 1000: jobs.append(render(key, cands, text, path)); keys.append(key)
-        print(f"{vid}: {len(jobs)} neu, {len(m) - len(jobs)} aus Cache", flush=True)
-        # Einzelne Fehler brechen nicht den ganzen Deploy ab: die Datei fehlt dann, die App nimmt die Gerätestimme
-        for key, r in zip(keys, await asyncio.gather(*jobs, return_exceptions=True)):
-            if isinstance(r, Exception): print(f"  ✗ {r}", flush=True); m.pop(key, None)
-        manifest["voices"][vid] = m
-
 # Eine Manifest-Datei pro Stadt: audio/manifest-<stadt>.json  (die App lädt nur die der gewählten Stadt)
 keep, gstate = set(), {"models": list(GEMINI_MODELS), "log": []}
 for city, TEXTS in ALL.items():
     print(f"=== {city}: {len(TEXTS)} Texte", flush=True)
     manifest = {"voices": {}}
-    asyncio.run(run_edge(TEXTS, manifest))
     run_gemini(TEXTS, manifest, CITY_NAMES.get(city, city.capitalize()), gstate, city)
     keep |= {f for m in manifest["voices"].values() for f in m.values()}
     json.dump(manifest, open(os.path.join(OUT, f"manifest-{city}.json"), "w"), indent=0)
