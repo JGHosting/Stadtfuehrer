@@ -6,4 +6,5 @@
 globalThis.CITIES = [
   { id:'augsburg', name:'Augsburg', tagline:'gegründet 15 v. Chr.', center:[48.3687,10.8986], radius:12000, file:'content/augsburg.js' },
   { id:'muenchen', name:'München',  tagline:'erstmals erwähnt 1158', center:[48.1374,11.5755], radius:18000, file:'content/muenchen.js' },
+  { id:'wuerzburg', name:'Würzburg', tagline:'erstmals erwähnt 704',  center:[49.7930,9.9310], radius:9000,  file:'content/wuerzburg.js' },
 ];
