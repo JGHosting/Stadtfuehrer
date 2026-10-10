@@ -1,6 +1,6 @@
 {
-  "appId": "dev.test.stadtfuehrer",
-  "appName": "Stadtführer",
+  "appId": "com.greimel.strolli",
+  "appName": "Strolli",
   "webDir": "www",
   "ios": {
     "contentInset": "never",

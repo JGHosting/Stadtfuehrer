@@ -7,9 +7,8 @@ Die Web-App wird mit **Capacitor** in eine echte iOS-App verpackt. Vorteile gege
 
 Zum Testen reicht deine **kostenlose Apple-ID** – kein Developer-Programm nötig.
 
-> ⚠️ **Noch offen:** endgültiger App-Name und Bundle-ID. Für den Test steht in `capacitor.config.json`
-> vorläufig `dev.test.stadtfuehrer` / „Stadtführer“. Vor dem App-Store-Eintrag festlegen – die Bundle-ID
-> lässt sich danach nicht mehr ändern.
+> App-Name **Strolli**, Bundle-ID **`com.greimel.strolli`** (in `capacitor.config.json`). Die Bundle-ID lässt sich nach
+> dem Anlegen im App Store Connect nicht mehr ändern – bis dahin schon. Vorher Markenlage prüfen (DPMA/EUIPO).
 
 ---
 
@@ -37,7 +36,7 @@ Standort-Berechtigungstexte, Hintergrund-Standort, Hintergrund-Audio und die Aud
 1. Xcode öffnet sich mit dem Projekt **App**. Links oben auf **App** (blaues Symbol) klicken → Reiter **Signing & Capabilities**.
 2. Bei **Team**: „Add an Account…“ → mit deiner Apple-ID anmelden → dein Name **(Personal Team)** auswählen.
 3. Falls Xcode meckert, dass die Bundle-ID vergeben ist: bei **Bundle Identifier** etwas Eindeutiges eintragen,
-   z. B. `dev.test.stadtfuehrer.jakob`.
+   z. B. `com.greimel.strolli.test`.
 4. Unter **Background Modes** sollten *Location updates* und *Audio* angehakt sein (macht das Skript, nur kontrollieren).
 
 ## Auf dem iPhone starten

@@ -1,6 +1,6 @@
 {
-  "name": "Stadtführer",
-  "short_name": "Stadtführer",
+  "name": "Strolli – Stadtführungen zum Hören",
+  "short_name": "Strolli",
   "description": "Persönliche Stadtführungen mit Navigation, Geschichten und Audio.",
   "lang": "de",
   "start_url": "./",

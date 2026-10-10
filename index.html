@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Stadtführer</title>
+<title>Strolli</title>
 <meta name="theme-color" content="#2E5E4B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Stadtführer">
+<meta name="apple-mobile-web-app-title" content="Strolli">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -238,8 +238,8 @@ details[open].settings summary::after{content:" ▴"}
 <div id="notice" class="notice" hidden role="status"></div>
 <div id="welcome" class="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
   <div class="welcome-card">
-    <h2 id="welcomeTitle">Willkommen!</h2>
-    <p>Diese App stellt dir eine persönliche Stadtführung zusammen und erzählt dir unterwegs Geschichten. Kurz vorab, wie sie funktioniert:</p>
+    <h2 id="welcomeTitle">Hallo, ich bin Strolli!</h2>
+    <p>Ich stelle dir eine persönliche Stadtführung zusammen und erzähle dir unterwegs Geschichten. Kurz vorab, wie das funktioniert:</p>
     <ul>
       <li><b>Standort:</b> Damit die App dich führen und an der richtigen Stelle erzählen kann, braucht sie während der Tour deinen Standort. Er bleibt auf deinem Gerät.</li>
       <li><b>Route und Karte:</b> Zur Routenberechnung werden Start und Stationen an einen Routing-Dienst geschickt, Karten und Fotos werden von OpenFreeMap und Wikipedia geladen.</li>
@@ -1073,7 +1073,7 @@ async function selectCity(id,{auto=false}={}){
 }
 function renderCityUI(){
   $('#cityName').textContent=CITY.name; $('#cityTagline').textContent=CITY.tagline||'';
-  document.title='Stadtführer '+CITY.name;
+  document.title='Strolli · '+CITY.name;
   const seg=$('#segStart');
   seg.innerHTML=[['me','Mein Standort'],...CITY.starts.map(x=>[x.id,x.name]),['pick','Auf Karte']].map(([v,l])=>`<button type="button" data-v="${esc(v)}">${esc(l)}</button>`).join('');
   seg._sync&&seg._sync(); $('#startHint').hidden=state.settings.startKind!=='pick';

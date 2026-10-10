@@ -1,4 +1,4 @@
-# Stadtführer – Prototyp
+# Strolli – Stadtführungen zum Hören (Prototyp)
 
 Persönliche Stadtführung als Web-App (PWA): Startpunkt, Zu Fuß/Fahrrad, Zeit und Themen wählen → die App plant eine Tour, navigiert dich hin und erzählt an jedem Stopp und unterwegs Geschichten (zum Lesen oder Anhören).
 
