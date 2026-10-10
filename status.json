@@ -1,0 +1,27 @@
+{
+ "zeit": "2026-10-10 16:07 UTC",
+ "gemini_aktiv": true,
+ "modelle_verfuegbar": [],
+ "tageskontingent_erreicht": true,
+ "anfragen_in_diesem_lauf": 1,
+ "staedte": {
+  "augsburg": {
+   "fertig": 125,
+   "gesamt": 136,
+   "neu_in_diesem_lauf": 0
+  },
+  "muenchen": {
+   "fertig": 53,
+   "gesamt": 114,
+   "neu_in_diesem_lauf": 0
+  },
+  "wuerzburg": {
+   "fertig": 0,
+   "gesamt": 78,
+   "neu_in_diesem_lauf": 0
+  }
+ },
+ "protokoll": [
+  "Tageskontingent aufgebraucht – Rest beim nächsten Lauf"
+ ]
+}

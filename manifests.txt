@@ -1,0 +1,3 @@
+audio/manifest-augsburg.json {'gemini': 125}
+audio/manifest-muenchen.json {'gemini': 53}
+audio/manifest-wuerzburg.json {'gemini': 0}
