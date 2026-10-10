@@ -13,7 +13,7 @@ func strolliPostDarwin(_ action: String) {
                                          CFNotificationName("com.greimel.strolli.\(action)" as CFString), nil, nil, true)
 }
 
-// MARK: - Gemeinsam mit der App (muss identisch sein mit native/ios-src/StrolliNative.swift)
+// MARK: - Gemeinsam mit der App (StrolliTourAttributes muss identisch sein mit native/ios-src/StrolliNative.swift)
 
 struct StrolliTourAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
@@ -29,7 +29,10 @@ struct StrolliTourAttributes: ActivityAttributes {
     var city: String
 }
 
-struct StrolliToggleAudioIntent: LiveActivityIntent {
+// Bewusst „AppIntent“ statt „LiveActivityIntent“: So läuft die Aktion in der Widget-Erweiterung selbst
+// (LiveActivityIntent würde in der App ausgeführt – das scheiterte an fehlenden Metadaten) und meldet sich
+// per Darwin-Benachrichtigung bei der laufenden App.
+struct StrolliToggleAudioIntent: AppIntent {
     static let title: LocalizedStringResource = "Pause oder weiter"
     init() {}
     func perform() async throws -> some IntentResult {
@@ -38,7 +41,7 @@ struct StrolliToggleAudioIntent: LiveActivityIntent {
     }
 }
 
-struct StrolliSkipIntent: LiveActivityIntent {
+struct StrolliSkipIntent: AppIntent {
     static let title: LocalizedStringResource = "Ansage überspringen"
     init() {}
     func perform() async throws -> some IntentResult {

@@ -323,15 +323,8 @@ final class StrolliActivity {
     }
 }
 
-/// Knöpfe der Live Activity laufen je nach iOS-Version im Prozess der Widget-Erweiterung. Eine Darwin-Benachrichtigung
-/// erreicht die App prozessübergreifend (ohne App Group).
-func strolliPostDarwin(_ action: String) {
-    NSLog("[Strolli] Intent ausgeführt: %@", action)
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
-                                         CFNotificationName("com.greimel.strolli.\(action)" as CFString), nil, nil, true)
-}
-
 // MARK: - Gemeinsam mit der Widget-Erweiterung (muss dort identisch sein: native/ios-src/widget/StrolliWidgetLiveActivity.swift)
+// Die Knöpfe (App Intents) leben nur in der Widget-Erweiterung und melden sich per Darwin-Benachrichtigung.
 
 @available(iOS 16.1, *)
 struct StrolliTourAttributes: ActivityAttributes {
@@ -346,24 +339,4 @@ struct StrolliTourAttributes: ActivityAttributes {
         var mode: String
     }
     var city: String
-}
-
-@available(iOS 17.0, *)
-struct StrolliToggleAudioIntent: LiveActivityIntent {
-    static let title: LocalizedStringResource = "Pause oder weiter"
-    init() {}
-    func perform() async throws -> some IntentResult {
-        strolliPostDarwin("toggle")
-        return .result()
-    }
-}
-
-@available(iOS 17.0, *)
-struct StrolliSkipIntent: LiveActivityIntent {
-    static let title: LocalizedStringResource = "Ansage überspringen"
-    init() {}
-    func perform() async throws -> some IntentResult {
-        strolliPostDarwin("skip")
-        return .result()
-    }
 }
