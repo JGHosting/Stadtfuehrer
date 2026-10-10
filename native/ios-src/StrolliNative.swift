@@ -49,7 +49,7 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
         // und der App (JavaScript) Bescheid geben, damit ihr Zustand stimmt.
         remoteObserver = NotificationCenter.default.addObserver(forName: strolliRemoteNotification, object: nil, queue: .main) { [weak self] n in
             guard let self = self, let action = n.object as? String else { return }
-            print("[Strolli] Knopf in der Live Activity: \(action)")
+            NSLog("[Strolli] Knopf in der Live Activity: %@", action)
             if action == "toggle" {
                 let nowPaused = self.togglePause()
                 self.notifyListeners("remote", data: ["action": nowPaused ? "paused" : "resumed"])
@@ -70,7 +70,7 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
                 guard let n = name else { return }
                 let raw = n.rawValue as String
                 let action = raw.hasSuffix("toggle") ? "toggle" : "skip"
-                print("[Strolli] Darwin-Nachricht empfangen: \(action)")
+                NSLog("[Strolli] Darwin-Nachricht empfangen: %@", action)
                 DispatchQueue.main.async { NotificationCenter.default.post(name: strolliRemoteNotification, object: action) }
             }, "com.greimel.strolli.\(action)" as CFString, nil, .deliverImmediately)
         }
@@ -326,7 +326,7 @@ final class StrolliActivity {
 /// Knöpfe der Live Activity laufen je nach iOS-Version im Prozess der Widget-Erweiterung. Eine Darwin-Benachrichtigung
 /// erreicht die App prozessübergreifend (ohne App Group).
 func strolliPostDarwin(_ action: String) {
-    print("[Strolli] Intent ausgeführt: \(action)")
+    NSLog("[Strolli] Intent ausgeführt: %@", action)
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
                                          CFNotificationName("com.greimel.strolli.\(action)" as CFString), nil, nil, true)
 }

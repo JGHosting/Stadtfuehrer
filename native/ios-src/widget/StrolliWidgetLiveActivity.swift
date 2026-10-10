@@ -8,6 +8,7 @@ import AppIntents
 /// Knöpfe der Live Activity laufen je nach iOS-Version im Prozess der Widget-Erweiterung. Eine Darwin-Benachrichtigung
 /// erreicht die App prozessübergreifend (ohne App Group).
 func strolliPostDarwin(_ action: String) {
+    NSLog("[Strolli] Intent ausgeführt: %@", action)
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
                                          CFNotificationName("com.greimel.strolli.\(action)" as CFString), nil, nil, true)
 }
@@ -66,7 +67,9 @@ struct StrolliAudioControls: View {
             Text(s.audioTitle.isEmpty ? "Strolli erzählt, sobald es etwas zu sehen gibt" : s.audioTitle)
                 .font(.subheadline.weight(s.audioTitle.isEmpty ? .regular : .semibold))
                 .foregroundStyle(strolliCream.opacity(s.audioTitle.isEmpty ? 0.7 : 1))
-                .lineLimit(1)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 4)
             if !s.audioTitle.isEmpty {
                 Button(intent: StrolliToggleAudioIntent()) {
@@ -112,12 +115,14 @@ struct StrolliLockScreenView: View {
                     Text(s.target)
                         .font(.title3.weight(.bold))
                         .foregroundStyle(strolliCream)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
                     if !s.maneuver.isEmpty {
                         Text(s.maneuver)
                             .font(.subheadline)
                             .foregroundStyle(strolliCream.opacity(0.8))
                             .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                 }
                 Spacer(minLength: 8)
@@ -160,6 +165,7 @@ struct StrolliWidgetLiveActivity: Widget {
                     Text(context.state.target)
                         .font(.headline)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     StrolliAudioControls(s: context.state)
