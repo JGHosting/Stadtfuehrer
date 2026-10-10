@@ -43,6 +43,7 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
 
     override public func load() {
         synth.delegate = self
+        print("[Strolli] Audio-Plugin geladen")
         // Knöpfe der Live Activity → an die App (JavaScript) weiterreichen
         remoteObserver = NotificationCenter.default.addObserver(forName: strolliRemoteNotification, object: nil, queue: .main) { [weak self] n in
             guard let action = n.object as? String else { return }
@@ -55,7 +56,7 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
     private func activate() {
         let s = AVAudioSession.sharedInstance()
         try? s.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
-        try? s.setActive(true)
+        do { try s.setActive(true) } catch { print("[Strolli] Audio-Sitzung: \(error)") }
     }
     /// Nach der Ansage die Sitzung freigeben, damit Musik wieder in voller Lautstärke spielt.
     private func scheduleDeactivate() {
@@ -93,6 +94,7 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
                 }
             }
             p.playImmediately(atRate: self.rate)
+            print("[Strolli] spiele \(url.lastPathComponent)")
             call.resolve()
         }
     }
@@ -111,6 +113,7 @@ public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesize
             u.rate = min(AVSpeechUtteranceMaximumSpeechRate, AVSpeechUtteranceDefaultSpeechRate * (0.5 + 0.5 * self.rate))
             self.utterance = u
             self.synth.speak(u)
+            print("[Strolli] Gerätestimme: \(text.prefix(40))")
             call.resolve()
         }
     }
@@ -232,11 +235,14 @@ final class StrolliActivity {
             Task { await a.update(ActivityContent(state: state, staleDate: nil)) }
             return
         }
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { print("[Strolli] Live Activities sind in den Einstellungen aus"); return }
         last = state
         // Starten geht nur, solange die App im Vordergrund ist (Tourstart) – sonst bleibt es einfach aus.
-        activity = try? Activity.request(attributes: StrolliTourAttributes(city: city),
-                                         content: ActivityContent(state: state, staleDate: nil), pushType: nil)
+        do {
+            activity = try Activity.request(attributes: StrolliTourAttributes(city: city),
+                                            content: ActivityContent(state: state, staleDate: nil), pushType: nil)
+            print("[Strolli] Live Activity gestartet")
+        } catch { print("[Strolli] Live Activity konnte nicht starten: \(error)") }
     }
 
     func end() {

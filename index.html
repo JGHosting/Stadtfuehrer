@@ -788,6 +788,7 @@ const Speech = {
   el:new Audio(),
   init(){
     const N=nAudio();
+    if(NATIVE) console.log('[Strolli] Audio-Wiedergabe: '+(N?'nativ (Plugin StrolliAudio)':'Web (Plugin fehlt)'));
     if(N){
       N.addListener('ended',e=>{ if(this.playing&&this.playing.id===e.id) this._done(); });
       N.addListener('error',e=>{ const it=this.playing; if(it&&it.id===e.id){ if(it.src){ it.src=null; this._device(it); } else this._done(); } });
@@ -808,6 +809,7 @@ const Speech = {
      (Tour starten, Anhören, Stimme testen) – danach ist das Audio-Element freigeschaltet. */
   unlock(){
     if(this._unlocked) return; this._unlocked=true;
+    if(nAudio()) return;   // App: natives Audio – das Web-Audio darf die Audio-Sitzung nicht übernehmen (würde Musik stoppen)
     if(this.ok) try{ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); }catch(e){}
     /* Auch das Audio-Element im Tipp einmal (stumm) starten – sonst lehnt iOS später die KI-Audios ab,
        wenn die erste Ansage zufällig von der Gerätestimme kam. */
@@ -1381,7 +1383,7 @@ function syncActivity(){
   if(json===actLast) return;
   if(key===actKey && Date.now()-actT<5000) return;
   actLast=json; actKey=key; actT=Date.now();
-  N.tour(st).catch(()=>{});
+  N.tour(st).then(()=>{ if(!syncActivity.logged){ syncActivity.logged=true; console.log('[Strolli] Live Activity gesendet: '+st.target); } }).catch(e=>console.log('[Strolli] Live Activity Fehler: '+e));
 }
 function endActivity(){ const N=nAudio(); actLast=actKey=''; if(N) N.endTour().catch(()=>{}); }
 function updateNavUI(ll){
