@@ -883,6 +883,8 @@ Speech.init();
 
 function showVoiceStatus(){
   const m=Speech.manifest, el=$('#voiceStatus'); if(!el) return;
+  const entry=CITY&&cityEntry(CITY.id);
+  if(entry&&entry.audio===false){ el.hidden=false; el.textContent=`Für ${CITY.name} gibt es noch keine Sprachausgabe. Alle Geschichten kannst du lesen.`; return; }
   const total=CITY? Object.keys(PHRASES.items(CITY)).length : 0;
   const g=m&&m.voices&&m.voices.gemini? Object.keys(m.voices.gemini).length : 0;
   el.hidden = !!total && g>=total;

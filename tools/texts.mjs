@@ -5,6 +5,7 @@ const run = f => vm.runInContext(fs.readFileSync(f,'utf8'), ctx, {filename:f});
 run('content/cities.js'); run('content/phrases.js');
 const out = {};
 for (const c of vm.runInContext('CITIES', ctx)) {
+  if (c.audio === false) continue;   // Stadt vorerst ohne Sprachausgabe
   run(c.file);
   out[c.id] = vm.runInContext(`PHRASES.items(CITY_DATA[${JSON.stringify(c.id)}])`, ctx);
 }
