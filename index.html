@@ -776,11 +776,25 @@ async function routeSpecs(origin,specs,mode){
    Sprachausgabe
    ===================================================================== */
 /* KI-Stimme: vorab erzeugte MP3s (audio/manifest.json). Fehlt eine Datei, spricht die Gerätestimme. */
+/* In der iPhone-App spielt ein natives Plugin (native/ios-src/StrolliNative.swift) die Audios ab:
+   Musik anderer Apps läuft dann weiter (wird nur während der Ansage leiser), und es gibt die Live Activity. */
+let _nAudio;
+const nAudio = () => { if(_nAudio!==undefined) return _nAudio;
+  try{ _nAudio = NATIVE && window.Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('StrolliAudio') ? Capacitor.registerPlugin('StrolliAudio') : null; }catch(e){ _nAudio=null; }
+  return _nAudio; };
 const Speech = {
-  voice:null, tag:null, queue:[], playing:null, manifest:null,
+  voice:null, tag:null, queue:[], playing:null, manifest:null, _seq:0,
   ok:'speechSynthesis' in window,
   el:new Audio(),
   init(){
+    const N=nAudio();
+    if(N){
+      N.addListener('ended',e=>{ if(this.playing&&this.playing.id===e.id) this._done(); });
+      N.addListener('error',e=>{ const it=this.playing; if(it&&it.id===e.id){ if(it.src){ it.src=null; this._device(it); } else this._done(); } });
+      // Knöpfe auf dem Sperrbildschirm / in der Dynamic Island
+      N.addListener('remote',e=>{ if(e.action==='toggle'){ if(!this.playing) return; this.paused? this.resume() : this.pause(); }
+        else if(e.action==='skip') this.skip(); });
+    }
     this.el.preload='auto';
     this.el.addEventListener('ended',()=>this._done());
     this.el.addEventListener('error',()=>{ const it=this.playing; if(it&&it.src){ it.src=null; this._device(it); } });
@@ -814,13 +828,17 @@ const Speech = {
     return null;
   },
   pause(){ if(!this.playing||this.paused) return; this.paused=true;
-    if(this.playing.src) this.el.pause(); else if(this.ok) speechSynthesis.pause(); updatePlayer(); },
+    const N=nAudio(); if(N) N.pause().catch(()=>{});
+    else if(this.playing.src) this.el.pause(); else if(this.ok) speechSynthesis.pause();
+    updatePlayBtn(); },
   resume(){ if(!this.paused) return; this.paused=false;
-    if(this.playing&&this.playing.src){ const pr=this.el.play(); if(pr) pr.catch(()=>{}); } else if(this.ok) speechSynthesis.resume(); updatePlayer(); },
+    const N=nAudio(); if(N) N.resume().catch(()=>{});
+    else if(this.playing&&this.playing.src){ const pr=this.el.play(); if(pr) pr.catch(()=>{}); } else if(this.ok) speechSynthesis.resume();
+    updatePlayBtn(); },
   /* Überspringen beendet nur die aktuelle Ansage. Wartende Ansagen werden verworfen –
      die nächste Geschichte kommt erst, wenn man wirklich an etwas vorbeiläuft. */
   skip(){ const it=this.playing; if(!it) return; const cb=it.onend; this.stop(); if(cb) cb(); },
-  setRate(r){ state.settings.rate=r; saveSettings(); this.el.playbackRate=r; updatePlayer(); },
+  setRate(r){ state.settings.rate=r; saveSettings(); this.el.playbackRate=r; const N=nAudio(); if(N) N.setRate({rate:r}).catch(()=>{}); updatePlayer(); },
   /* say(text, {key, tag, interrupt, onend}) – key verweist auf eine KI-Audiodatei */
   /* keep:true (Begrüßung) wird nie abgeschnitten: Eine neue Ansage mit interrupt wartet dann, bis sie fertig ist,
      verwirft aber alles andere, was noch in der Warteschlange stand. */
@@ -830,7 +848,7 @@ const Speech = {
       if(this.playing&&this.playing.keep) this.queue=this.queue.filter(q=>q.keep);
       else this.stop(true);
     }
-    this.queue.push({text,src:this.srcFor(key),tag,onend,title,ref,keep});
+    this.queue.push({text,src:this.srcFor(key),tag,onend,title,ref,keep,id:'a'+(++this._seq)});
     if(!this.playing) this._next();
     updatePlayBtn();
   },
@@ -838,13 +856,19 @@ const Speech = {
     const it=this.queue.shift(); this.playing=it||null; this.paused=false;
     if(!it){ this.tag=null; updatePlayBtn(); return; }
     this.tag=it.tag;
-    if(it.src){
+    const N=nAudio();
+    if(N){
+      if(it.src) N.play({url:it.src,id:it.id,rate:state.settings.rate||1}).catch(()=>{ if(this.playing===it){ it.src=null; this._device(it); } });
+      else this._device(it);
+    } else if(it.src){
       this.el.src=it.src; this.el.playbackRate=state.settings.rate||1;
       const pr=this.el.play(); if(pr) pr.catch(e=>{ if(this.playing===it && !this.paused && e && e.name!=='AbortError'){ it.src=null; this._device(it); } });
     } else this._device(it);
     updatePlayBtn();
   },
   _device(it){
+    const N=nAudio();
+    if(N){ N.speak({text:PHRASES.applyPhonetic(PHRASES.spoken(it.text)),id:it.id,rate:state.settings.rate||1}).catch(()=>{ if(this.playing===it) this._done(); }); return; }
     if(!this.ok){ this._done(); return; }
     const parts=PHRASES.applyPhonetic(PHRASES.spoken(it.text)).replace(/\s+/g,' ').match(/[^.!?…]+[.!?…]*["“”]?\s*/g)||[it.text]; const cs=[]; let cur='';
     for(const p of parts){ if(cur&&(cur+p).length>230){ cs.push(cur.trim()); cur=p; } else cur+=p; } if(cur.trim()) cs.push(cur.trim());
@@ -857,6 +881,7 @@ const Speech = {
   stop(silent){
     this.queue=[]; const it=this.playing; this.playing=null; this.tag=null; this.paused=false;
     try{ this.el.pause(); }catch(e){}
+    const N=nAudio(); if(N&&it) N.stop().catch(()=>{});
     if(this.ok){ try{ speechSynthesis.resume(); }catch(e){} speechSynthesis.cancel(); }   // Safari bleibt sonst nach Pause stumm
     if(!silent) updatePlayBtn();
   }
@@ -1061,7 +1086,7 @@ async function loadCityData(entry){
 }
 /* Laufende Tour ohne Abschlussbildschirm abbrechen (z. B. beim Stadtwechsel im Entwicklermodus) */
 function abortTour(){
-  stopTracking(); Speech.stop();
+  stopTracking(); Speech.stop(); state.nav=null; endActivity();
   state.nav=null; state.storyCtx=null; state.arrival=null;
   $('#banner').hidden=true; $('#toast').hidden=true; $('#rerouteBtn').hidden=true; $('#simBar').hidden=true; $('#endConfirm').hidden=true;
   state.storyMin=false; $('#story').hidden=true; updatePlayer();
@@ -1340,6 +1365,25 @@ function legRemaining(ll){
   for(let j=nav.stepIdx+1;j<leg.steps.length;j++) rem+=leg.steps[j].distance;
   return rem;
 }
+/* Live Activity (iPhone-App): nächster Stopp, Entfernung und Audio auf dem Sperrbildschirm / in der Dynamic Island.
+   Wichtige Änderungen gehen sofort raus, die laufende Entfernung höchstens alle 5 Sekunden. */
+let actLast='', actKey='', actT=0;
+function syncActivity(){
+  const N=nAudio(), nav=state.nav; if(!N||!nav||!state.legs) return;
+  const leg=state.legs[nav.legIdx]; if(!leg) return;
+  const next=leg.steps[nav.stepIdx+1], it=Speech.playing;
+  const st={ city:CITY.name, mode:state.settings.mode,
+    step: leg.target.home? 'Zurück zum Start' : `Stopp ${nav.legIdx+1} von ${state.tour.length}`,
+    target: leg.target.name, distance: $('#navDist').textContent, eta: $('#navEta').textContent,
+    maneuver: next && next.maneuver.type!=='arrive' ? $('#banMain').textContent : '',
+    audioTitle: it? (it.title||'Strolli erzählt') : '', playing: !!it && !Speech.paused };
+  const json=JSON.stringify(st), key=[st.step,st.target,st.maneuver,st.audioTitle,st.playing].join('|');
+  if(json===actLast) return;
+  if(key===actKey && Date.now()-actT<5000) return;
+  actLast=json; actKey=key; actT=Date.now();
+  N.tour(st).catch(()=>{});
+}
+function endActivity(){ const N=nAudio(); actLast=actKey=''; if(N) N.endTour().catch(()=>{}); }
 function updateNavUI(ll){
   const nav=state.nav; if(!nav) return; const leg=state.legs[nav.legIdx]; if(!leg) return;
   ll=ll||state.pos||leg.pts[0];
@@ -1366,6 +1410,7 @@ function updateNavUI(ll){
     $('#banMain').textContent=leg.target.name; $('#banSub').textContent=isHome?'Zurück zum Startpunkt':'Gleich da';
     $('#banDist').textContent=fmtDist(dist(ll,leg.target.ll));
   }
+  syncActivity();
   positionLocate();
 }
 
@@ -1419,7 +1464,7 @@ function finishTour(){
   $('#doneTitle').textContent=`${(CITY.dialect&&CITY.dialect.hello)||'Danke'}, bis zum nächsten Mal!`;
   showView('viewDone');
   Speech.say(PHRASES.end(CITY),{key:'end',tag:'end',title:'Tour beendet'});
-  state.nav=null; drawRoute(); drawStopMarkers();
+  state.nav=null; endActivity(); drawRoute(); drawStopMarkers();
 }
 function stopTracking(){
   if(state.watchId!=null){ navigator.geolocation.clearWatch(state.watchId); state.watchId=null; }
@@ -1516,6 +1561,7 @@ const ICON_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7
 const RATES=[1,1.25,1.5,2];
 const fmtRate=r=>String(r).replace('.',',')+'×';
 function updatePlayer(){
+  if(state.nav) syncActivity();
   const pl=$('#player'); if(!pl) return;
   const storyOpen=!$('#story').hidden;
   const arrivalMin=state.storyMin&&state.storyCtx&&state.storyCtx.mode==='arrival';

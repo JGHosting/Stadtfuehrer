@@ -177,7 +177,8 @@ Dann in Xcode **▶** (Xcode kann dabei offen bleiben).
 - Läuft das Vorlesen weiter, wenn du das iPhone **sperrst**? (Wenn nicht: Bescheid geben, dann stelle ich auf
   einen nativen Audio-Player um.)
 - Kommt die Ankunft an einer Station, während das iPhone in der **Tasche** ist?
-- Läuft **Musik** (z. B. Spotify) neben Strolli weiter, und wird sie nur während der Geschichten leiser – oder die ganze Zeit?
+- Läuft **Musik** (z. B. Spotify) neben Strolli weiter? Sie soll nur während einer Ansage leiser werden und danach wieder normal laut sein.
+- Auf dem Sperrbildschirm: Live Activity mit nächstem Stopp und Pause/Überspringen (nach Abschnitt 11).
 - **Akkuverbrauch** über eine ganze Tour.
 - Der **Simulationsmodus** funktioniert auch in der App (7× auf „Deine Stadtführung“ tippen).
 
@@ -220,6 +221,33 @@ Hell, Dunkel, Getönt und Klar) rechnet iOS selbst aus einem Icon mit Ebenen:
 > `npm run sync` überschreibt nur das alte Bild-Icon, nicht die `AppIcon.icon`-Datei. Sie bleibt also erhalten.
 
 ---
+
+## 11. Live Activity: nächster Stopp und Audio-Knöpfe auf dem Sperrbildschirm (einmalig einrichten)
+Während einer Tour zeigt Strolli auf dem Sperrbildschirm und in der Dynamic Island: Stopp-Nummer, nächstes Ziel,
+Entfernung, Abbiegehinweis und – wenn gerade erzählt wird – Titel mit Knöpfen **Pause/Weiter** und **Überspringen**.
+Dafür braucht die App eine *Widget-Erweiterung*, die man einmal in Xcode anlegt:
+
+1. Erst die App aktualisieren (Abschnitt 6: `git pull`, `npm install`, `npm run sync`).
+2. In Xcode: Menü **File → New → Target…**
+3. Oben **iOS** wählen, in der Liste **Widget Extension** → **Next**.
+4. Ausfüllen:
+   - **Product Name:** `StrolliWidget` (genau so geschrieben)
+   - **Team:** Jakob Greimel (Personal Team)
+   - **Include Live Activity:** ✅ anhaken
+   - **Include Control:** ❌ aus
+   - **Include Configuration App Intent:** ❌ aus
+   - → **Finish**
+5. Frage *„Activate “StrolliWidget” scheme?“* → **Don't Activate** (oben muss weiter **App** als Schema stehen).
+6. Im Terminal (im Ordner `native`) noch einmal:
+   ```bash
+   npm run sync
+   ```
+   Es soll `Live Activity: Dateien nach ios/App/StrolliWidget kopiert.` erscheinen.
+7. In Xcode **▶** (Schema **App**, Ziel dein iPhone).
+8. Testen: Tour (oder Simulation) starten, iPhone sperren → die Live Activity erscheint auf dem Sperrbildschirm.
+   Falls nicht: iPhone **Einstellungen → Strolli → Live-Aktivitäten** einschalten.
+
+Wenn Xcode beim Bauen rote Fehler zeigt: Screenshot an mich.
 
 ## 10. Später für den App Store
 - Apple Developer Program (99 €/Jahr) – erst nötig für TestFlight (Tester einladen) und die Veröffentlichung.

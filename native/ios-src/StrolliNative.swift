@@ -1,0 +1,288 @@
+// Strolli: nativer Audio-Player + Live Activity (Sperrbildschirm / Dynamic Island).
+// Wird von native/scripts/patch-ios.mjs an ios/App/App/SceneDelegate.swift angehängt (dort nicht von Hand ändern,
+// sondern hier – dann `npm run sync`). Benötigte Imports: AVFoundation, ActivityKit, AppIntents (setzt das Skript).
+
+/// Ersetzt den Standard-Controller von Capacitor, um das Strolli-Plugin zu registrieren.
+class StrolliBridgeViewController: CAPBridgeViewController {
+    override func capacitorDidLoad() {
+        bridge?.registerPluginInstance(StrolliAudioPlugin())
+    }
+}
+
+let strolliRemoteNotification = Notification.Name("StrolliRemoteCommand")
+
+// MARK: - Audio
+
+/// Spielt die KI-Audios (MP3) bzw. die Gerätestimme nativ ab.
+/// Die Audio-Sitzung ist „mischbar“: Musik anderer Apps läuft weiter und wird nur während einer Ansage leiser.
+@objc(StrolliAudioPlugin)
+public class StrolliAudioPlugin: CAPPlugin, CAPBridgedPlugin, AVSpeechSynthesizerDelegate {
+    public let identifier = "StrolliAudioPlugin"
+    public let jsName = "StrolliAudio"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "play", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "speak", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pause", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "resume", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stop", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setRate", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "tour", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "endTour", returnType: CAPPluginReturnPromise),
+    ]
+
+    private var player: AVPlayer?
+    private var endObserver: NSObjectProtocol?
+    private var failObserver: NSObjectProtocol?
+    private var statusObserver: NSKeyValueObservation?
+    private var remoteObserver: NSObjectProtocol?
+    private let synth = AVSpeechSynthesizer()
+    private var utterance: AVSpeechUtterance?
+    private var rate: Float = 1
+    private var currentId = ""
+    private var gen = 0
+
+    override public func load() {
+        synth.delegate = self
+        // Knöpfe der Live Activity → an die App (JavaScript) weiterreichen
+        remoteObserver = NotificationCenter.default.addObserver(forName: strolliRemoteNotification, object: nil, queue: .main) { [weak self] n in
+            guard let action = n.object as? String else { return }
+            self?.notifyListeners("remote", data: ["action": action])
+        }
+        if #available(iOS 16.2, *) { StrolliActivity.endAll() }   // Reste einer abgebrochenen Tour entfernen
+    }
+
+    // MARK: Audio-Sitzung
+    private func activate() {
+        let s = AVAudioSession.sharedInstance()
+        try? s.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
+        try? s.setActive(true)
+    }
+    /// Nach der Ansage die Sitzung freigeben, damit Musik wieder in voller Lautstärke spielt.
+    private func scheduleDeactivate() {
+        let g = gen
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak self] in
+            guard let self = self, self.gen == g, self.player == nil, !self.synth.isSpeaking else { return }
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
+    }
+
+    // MARK: Abspielen
+    @objc func play(_ call: CAPPluginCall) {
+        guard let s = call.getString("url"), let url = URL(string: s) else { call.reject("Ungültige Audio-Adresse"); return }
+        let id = call.getString("id") ?? ""
+        if let r = call.getDouble("rate") { rate = Float(r) }
+        DispatchQueue.main.async {
+            self.halt()
+            self.gen += 1
+            self.currentId = id
+            self.activate()
+            let item = AVPlayerItem(url: url)
+            item.audioTimePitchAlgorithm = .timeDomain
+            let p = AVPlayer(playerItem: item)
+            self.player = p
+            self.endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
+                self?.finished(id)
+            }
+            self.failObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemFailedToPlayToEndTime, object: item, queue: .main) { [weak self] _ in
+                self?.failed(id, "Abspielen abgebrochen")
+            }
+            self.statusObserver = item.observe(\.status, options: [.new]) { [weak self] it, _ in
+                if it.status == .failed {
+                    let msg = it.error?.localizedDescription ?? "Audio-Fehler"
+                    DispatchQueue.main.async { self?.failed(id, msg) }
+                }
+            }
+            p.playImmediately(atRate: self.rate)
+            call.resolve()
+        }
+    }
+
+    @objc func speak(_ call: CAPPluginCall) {
+        let text = call.getString("text") ?? ""
+        let id = call.getString("id") ?? ""
+        if let r = call.getDouble("rate") { rate = Float(r) }
+        DispatchQueue.main.async {
+            self.halt()
+            self.gen += 1
+            self.currentId = id
+            self.activate()
+            let u = AVSpeechUtterance(string: text)
+            u.voice = StrolliAudioPlugin.germanVoice()
+            u.rate = min(AVSpeechUtteranceMaximumSpeechRate, AVSpeechUtteranceDefaultSpeechRate * (0.5 + 0.5 * self.rate))
+            self.utterance = u
+            self.synth.speak(u)
+            call.resolve()
+        }
+    }
+
+    static func germanVoice() -> AVSpeechSynthesisVoice? {
+        let vs = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "de-DE" }
+        return vs.max(by: { $0.quality.rawValue < $1.quality.rawValue }) ?? AVSpeechSynthesisVoice(language: "de-DE")
+    }
+
+    public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        guard utterance === self.utterance else { return }
+        finished(currentId)
+    }
+
+    @objc func pause(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.player?.pause()
+            if self.synth.isSpeaking { self.synth.pauseSpeaking(at: .word) }
+            // Während der Pause soll die Musik wieder normal laut sein
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            call.resolve()
+        }
+    }
+
+    @objc func resume(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.activate()
+            if let p = self.player { p.playImmediately(atRate: self.rate) }
+            if self.synth.isPaused { self.synth.continueSpeaking() }
+            call.resolve()
+        }
+    }
+
+    @objc func stop(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.halt()
+            self.currentId = ""
+            self.gen += 1
+            self.scheduleDeactivate()
+            call.resolve()
+        }
+    }
+
+    @objc func setRate(_ call: CAPPluginCall) {
+        let r = Float(call.getDouble("rate") ?? 1)
+        DispatchQueue.main.async {
+            self.rate = r
+            if let p = self.player, p.rate != 0 { p.rate = r }
+            call.resolve()
+        }
+    }
+
+    private func finished(_ id: String) {
+        guard id == currentId else { return }
+        clearPlayer()
+        utterance = nil
+        currentId = ""
+        notifyListeners("ended", data: ["id": id])
+        scheduleDeactivate()
+    }
+
+    private func failed(_ id: String, _ message: String) {
+        guard id == currentId, player != nil else { return }
+        clearPlayer()
+        currentId = ""
+        notifyListeners("error", data: ["id": id, "message": message])
+        scheduleDeactivate()
+    }
+
+    private func clearPlayer() {
+        if let o = endObserver { NotificationCenter.default.removeObserver(o) }
+        if let o = failObserver { NotificationCenter.default.removeObserver(o) }
+        endObserver = nil; failObserver = nil
+        statusObserver?.invalidate(); statusObserver = nil
+        player?.pause(); player = nil
+    }
+
+    private func halt() {
+        clearPlayer()
+        utterance = nil
+        if synth.isSpeaking || synth.isPaused { synth.stopSpeaking(at: .immediate) }
+    }
+
+    // MARK: Live Activity
+    @objc func tour(_ call: CAPPluginCall) {
+        guard #available(iOS 16.2, *) else { call.resolve(); return }
+        let state = StrolliTourAttributes.ContentState(
+            step: call.getString("step") ?? "",
+            target: call.getString("target") ?? "",
+            distance: call.getString("distance") ?? "",
+            eta: call.getString("eta") ?? "",
+            maneuver: call.getString("maneuver") ?? "",
+            audioTitle: call.getString("audioTitle") ?? "",
+            playing: call.getBool("playing") ?? false,
+            mode: call.getString("mode") ?? "walk")
+        let city = call.getString("city") ?? ""
+        DispatchQueue.main.async {
+            StrolliActivity.shared.update(city: city, state: state)
+            call.resolve()
+        }
+    }
+
+    @objc func endTour(_ call: CAPPluginCall) {
+        if #available(iOS 16.2, *) { DispatchQueue.main.async { StrolliActivity.shared.end() } }
+        call.resolve()
+    }
+}
+
+@available(iOS 16.2, *)
+final class StrolliActivity {
+    static let shared = StrolliActivity()
+    private var activity: Activity<StrolliTourAttributes>?
+    private var last: StrolliTourAttributes.ContentState?
+
+    func update(city: String, state: StrolliTourAttributes.ContentState) {
+        if let a = activity, a.activityState == .active {
+            if state == last { return }
+            last = state
+            Task { await a.update(ActivityContent(state: state, staleDate: nil)) }
+            return
+        }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        last = state
+        // Starten geht nur, solange die App im Vordergrund ist (Tourstart) – sonst bleibt es einfach aus.
+        activity = try? Activity.request(attributes: StrolliTourAttributes(city: city),
+                                         content: ActivityContent(state: state, staleDate: nil), pushType: nil)
+    }
+
+    func end() {
+        let a = activity
+        activity = nil; last = nil
+        Task { await a?.end(nil, dismissalPolicy: .immediate) }
+    }
+
+    static func endAll() {
+        Task { for a in Activity<StrolliTourAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) } }
+    }
+}
+
+// MARK: - Gemeinsam mit der Widget-Erweiterung (muss dort identisch sein: native/ios-src/widget/StrolliWidgetLiveActivity.swift)
+
+@available(iOS 16.1, *)
+struct StrolliTourAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        var step: String
+        var target: String
+        var distance: String
+        var eta: String
+        var maneuver: String
+        var audioTitle: String
+        var playing: Bool
+        var mode: String
+    }
+    var city: String
+}
+
+@available(iOS 17.0, *)
+struct StrolliToggleAudioIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Pause oder weiter"
+    init() {}
+    func perform() async throws -> some IntentResult {
+        await MainActor.run { NotificationCenter.default.post(name: Notification.Name("StrolliRemoteCommand"), object: "toggle") }
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
+struct StrolliSkipIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Ansage überspringen"
+    init() {}
+    func perform() async throws -> some IntentResult {
+        await MainActor.run { NotificationCenter.default.post(name: Notification.Name("StrolliRemoteCommand"), object: "skip") }
+        return .result()
+    }
+}
