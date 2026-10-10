@@ -63,6 +63,21 @@ if (fs.existsSync(pbxPath)) {
   const fixed = pbx.replace(/IPHONEOS_DEPLOYMENT_TARGET = \d+(\.\d+)?;/g, 'IPHONEOS_DEPLOYMENT_TARGET = 17.0;');
   if (fixed !== pbx) { fs.writeFileSync(pbxPath, fixed); console.log('App und Widget: Mindestversion auf iOS 17 gesetzt.'); }
 }
+// 2f) AppIntents.framework fest ins App-Target eintragen. Ohne diese Verknüpfung überspringt Xcode das Auslesen der
+//     Knopf-Aktionen („no metadata for StrolliToggleAudioIntent“) und die Knöpfe der Live Activity tun nichts.
+if (fs.existsSync(pbxPath)) {
+  let pbx = fs.readFileSync(pbxPath, 'utf8');
+  if (!pbx.includes('AppIntents.framework')) {
+    const BF = 'A7C1E0F12E5A000100STRL01'.replace(/[^0-9A-F]/g, 'F'), FR = 'A7C1E0F12E5A000100STRL02'.replace(/[^0-9A-F]/g, 'E');
+    pbx = pbx
+      .replace('/* Begin PBXBuildFile section */\n', `/* Begin PBXBuildFile section */\n\t\t${BF} /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ${FR} /* AppIntents.framework */; };\n`)
+      .replace('/* Begin PBXFileReference section */\n', `/* Begin PBXFileReference section */\n\t\t${FR} /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };\n`)
+      .replace(/(504EC3011FED79650016851F \/\* Frameworks \*\/ = \{[\s\S]*?files = \(\n)/, `$1\t\t\t\t${BF} /* AppIntents.framework in Frameworks */,\n`)
+      .replace(/(504EC2FB1FED79650016851F = \{[\s\S]*?children = \(\n)/, `$1\t\t\t\t${FR} /* AppIntents.framework */,\n`);
+    if (pbx.split('AppIntents.framework').length - 1 >= 4) { fs.writeFileSync(pbxPath, pbx); console.log('AppIntents.framework ins App-Target eingetragen.'); }
+    else console.warn('AppIntents.framework konnte nicht automatisch eingetragen werden – bitte in Xcode unter General → Frameworks hinzufügen.');
+  }
+}
 const pkgPath = path.resolve(app, '..', 'CapApp-SPM', 'Package.swift');
 if (fs.existsSync(pkgPath)) {
   const pkg = fs.readFileSync(pkgPath, 'utf8');
