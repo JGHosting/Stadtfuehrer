@@ -324,7 +324,6 @@ final class StrolliActivity {
 }
 
 // MARK: - Gemeinsam mit der Widget-Erweiterung (muss dort identisch sein: native/ios-src/widget/StrolliWidgetLiveActivity.swift)
-// Die Knöpfe (App Intents) leben nur in der Widget-Erweiterung und melden sich per Darwin-Benachrichtigung.
 
 @available(iOS 16.1, *)
 struct StrolliTourAttributes: ActivityAttributes {
@@ -339,4 +338,28 @@ struct StrolliTourAttributes: ActivityAttributes {
         var mode: String
     }
     var city: String
+}
+
+// Knöpfe der Live Activity. iOS führt sie im Prozess der App aus – deshalb müssen sie (öffentlich) auch hier stehen,
+// mit genau demselben Namen wie in der Widget-Erweiterung.
+@available(iOS 17.0, *)
+public struct StrolliToggleAudioIntent: LiveActivityIntent {
+    public static let title: LocalizedStringResource = "Pause oder weiter"
+    public init() {}
+    public func perform() async throws -> some IntentResult {
+        NSLog("[Strolli] Intent in der App: toggle")
+        await MainActor.run { NotificationCenter.default.post(name: strolliRemoteNotification, object: "toggle") }
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
+public struct StrolliSkipIntent: LiveActivityIntent {
+    public static let title: LocalizedStringResource = "Ansage überspringen"
+    public init() {}
+    public func perform() async throws -> some IntentResult {
+        NSLog("[Strolli] Intent in der App: skip")
+        await MainActor.run { NotificationCenter.default.post(name: strolliRemoteNotification, object: "skip") }
+        return .result()
+    }
 }

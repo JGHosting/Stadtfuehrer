@@ -78,6 +78,15 @@ if (fs.existsSync(pbxPath)) {
     else console.warn('AppIntents.framework konnte nicht automatisch eingetragen werden – bitte in Xcode unter General → Frameworks hinzufügen.');
   }
 }
+// 2g) Debug-Builds ohne „Debug-Dylib“: Sonst liegen die Knopf-Aktionen in App.debug.dylib und iOS findet ihre
+//     Beschreibung nicht („There is no metadata for StrolliToggleAudioIntent“).
+if (fs.existsSync(pbxPath)) {
+  let pbx = fs.readFileSync(pbxPath, 'utf8');
+  if (!pbx.includes('ENABLE_DEBUG_DYLIB = NO;')) {
+    pbx = pbx.replace(/(\n(\t+)INFOPLIST_FILE = App\/Info\.plist;)/g, '\n$2ENABLE_DEBUG_DYLIB = NO;$1');
+    fs.writeFileSync(pbxPath, pbx); console.log('App-Target: Debug-Dylib abgeschaltet.');
+  }
+}
 const pkgPath = path.resolve(app, '..', 'CapApp-SPM', 'Package.swift');
 if (fs.existsSync(pkgPath)) {
   const pkg = fs.readFileSync(pkgPath, 'utf8');

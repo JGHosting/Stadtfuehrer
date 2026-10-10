@@ -29,22 +29,21 @@ struct StrolliTourAttributes: ActivityAttributes {
     var city: String
 }
 
-// Bewusst „AppIntent“ statt „LiveActivityIntent“: So läuft die Aktion in der Widget-Erweiterung selbst
-// (LiveActivityIntent würde in der App ausgeführt – das scheiterte an fehlenden Metadaten) und meldet sich
-// per Darwin-Benachrichtigung bei der laufenden App.
-struct StrolliToggleAudioIntent: AppIntent {
-    static let title: LocalizedStringResource = "Pause oder weiter"
-    init() {}
-    func perform() async throws -> some IntentResult {
+// Gleichnamig auch in der App (StrolliNative.swift): iOS führt Knöpfe einer Live Activity in der App aus.
+// Falls doch hier in der Erweiterung, meldet sich die Aktion per Darwin-Benachrichtigung bei der App.
+public struct StrolliToggleAudioIntent: LiveActivityIntent {
+    public static let title: LocalizedStringResource = "Pause oder weiter"
+    public init() {}
+    public func perform() async throws -> some IntentResult {
         strolliPostDarwin("toggle")
         return .result()
     }
 }
 
-struct StrolliSkipIntent: AppIntent {
-    static let title: LocalizedStringResource = "Ansage überspringen"
-    init() {}
-    func perform() async throws -> some IntentResult {
+public struct StrolliSkipIntent: LiveActivityIntent {
+    public static let title: LocalizedStringResource = "Ansage überspringen"
+    public init() {}
+    public func perform() async throws -> some IntentResult {
         strolliPostDarwin("skip")
         return .result()
     }
