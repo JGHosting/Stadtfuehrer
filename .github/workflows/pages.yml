@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: KI-Audios aus dem Cache holen
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: audio
           key: audio-${{ github.run_id }}
@@ -46,6 +46,13 @@ jobs:
           python tools/tts.py texts.json audio
           ls audio | wc -l
           du -sh audio
+      # Auch wenn ein späterer Schritt scheitert: bereits bezahlte Gemini-Audios nicht wegwerfen
+      - name: KI-Audios im Cache sichern
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: audio
+          key: audio-${{ github.run_id }}
       - name: Audio-Status ins Repo schreiben (Branch audio-status, zur Fehlersuche)
         if: always()
         run: |
@@ -54,9 +61,13 @@ jobs:
           cd /tmp/st && git init -q && git checkout -q -b audio-status
           git -c user.name=github-actions -c user.email=actions@github.com add . && git -c user.name=github-actions -c user.email=actions@github.com commit -q -m "Audio-Status $(date -u +%FT%TZ)"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" audio-status
+      - name: Nur die Web-App veröffentlichen (ohne native/, server/, tools/, docs/)
+        run: |
+          mkdir _site
+          cp -r index.html sw.js manifest.webmanifest icon-*.png content vendor legal audio _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

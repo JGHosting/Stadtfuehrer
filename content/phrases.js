@@ -42,7 +42,7 @@ globalThis.PHRASES = {
       if(r>=1 && r<20){ if(w.endsWith('eins')) return w.slice(0,-4)+'ersten'; if(w.endsWith('drei')) return w.slice(0,-4)+'dritten';
         if(w.endsWith('sieben')) return w.slice(0,-6)+'siebten'; if(w.endsWith('acht')) return w+'en'; return w+'ten'; }
       return w+'sten'; };
-    const ORD_NEXT='Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Jahrhundert\\w*|Geburtstag|Ausfahrt|Mal|Stock';
+    const ORD_NEXT='Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Jahrhundert\\w*|Jahrtausend\\w*|Geburtstag|Jahrestag|Todestag|Weltkrieg|Reich|Ausfahrt|Mal|Stock|Platz|Liga|Klasse';
     return t
       .replace(/\bSt\.\s/g,'Sankt ')
       .replace(/\s&\s/g,' und ')
@@ -50,6 +50,8 @@ globalThis.PHRASES = {
       .replace(/\bz\.\s?B\./g,'zum Beispiel')
       .replace(/(\d{1,3})\.(\d{3})(?!\d)/g,'$1$2')                                   // 20.000 → 20000
       .replace(/(\d+),(\d+)/g,(m,a,b)=>num(+a)+' Komma '+b.split('').map(x=>ONES[+x]).join(' '))   // 98,5 → achtundneunzig Komma fünf
+      // „vom 16. bis zum 19. Jahrhundert“: auch die erste Zahl ist eine Ordnungszahl
+      .replace(new RegExp('(\\d+)\\.(?=\\s+(?:bis|und|oder)\\s+(?:zum\\s+|zur\\s+|ins\\s+)?\\d+\\.\\s+(?:'+ORD_NEXT+')\\b)','g'),(m,d)=>ord(+d))
       .replace(new RegExp('(\\d+)\\.(?=\\s+(?:'+ORD_NEXT+')\\b)','g'),(m,d)=>ord(+d))
       .replace(/(\d{4})er\b/g,(m,d)=>num(+d)+'er')
       .replace(/\d+/g,d=>num(+d))

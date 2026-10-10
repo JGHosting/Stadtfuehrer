@@ -467,7 +467,7 @@ function notice(msg,ms=4500){ const n=$('#notice'); n.textContent=msg; n.hidden=
 const DEFAULTS = {startKind:'', mode:'walk', minutes:120, themes:['geschichte','fugger','wasser'], loop:true,
                   autoplay:true, wayside:true, turns:false, rate:1, audio:true, sim:false, simSpeed:'5', voice:'gemini', v:3};
 const state = {
-  settings: (()=>{ const st=Object.assign({}, DEFAULTS, store.get('settings', {}));
+  settings: (()=>{ const stored=store.get('settings', {})||{}; const st=Object.assign({}, DEFAULTS, stored); st.v=stored.v||(Object.keys(stored).length?1:DEFAULTS.v);
     if(!(st.v>=2)){ st.turns=false; st.voice='gemini'; st.v=2; }
     if(!(st.v>=3)){ st.themes=[]; st.themesByCity={}; st.v=3; }   // neue Kategorien mit Must-See
     if(st.voice==='seraphina') st.voice='katja'; if(st.voice==='florian') st.voice='conrad';
@@ -489,22 +489,23 @@ const dwellOf = (s,mode) => mode==='bike' ? Math.max(4, Math.round(s.dwell*0.8))
 /* =====================================================================
    Wikipedia: Koordinaten präzisieren + Fotos laden
    ===================================================================== */
-const allPlaces = () => [...CITY.stops, ...CITY.wayside];
-function applyWiki(data){
-  for(const p of allPlaces()){
+const allPlaces = (city=CITY) => [...city.stops, ...city.wayside];
+function applyWiki(data,city=CITY){
+  for(const p of allPlaces(city)){
     const w=data[p.id]; if(!w) continue;
     if(w.ll && dist(w.ll,p.ll)<500) p.ll=w.ll;
     if(w.img) p.img=w.img;
     if(w.credit) p.credit=w.credit;
   }
 }
-async function enrichFromWikipedia(){
-  const cached=store.get('wiki2_'+CITY.id,null);
-  if(cached && Date.now()-cached.t < 14*864e5){ applyWiki(cached.d); return; }
-  const list=allPlaces().filter(p=>p.wiki), out={};
+/* Läuft für eine feste Stadt – auch wenn inzwischen eine andere gewählt wurde, landet nichts bei der falschen. */
+async function enrichFromWikipedia(city=CITY){
+  const cached=store.get('wiki3_'+city.id,null);
+  if(cached && Date.now()-cached.t < 14*864e5){ applyWiki(cached.d,city); return; }
+  const list=allPlaces(city).filter(p=>p.wiki), out={};
   for(let i=0;i<list.length;i+=45){
     const chunk=list.slice(i,i+45);
-    const url='https://de.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=coordinates|pageimages&piprop=thumbnail|name&pithumbsize=800&titles='+encodeURIComponent(chunk.map(p=>p.wiki).join('|'));
+    const url='https://de.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=coordinates|pageimages&piprop=thumbnail|name&pithumbsize=800&colimit=max&pilimit=max&titles='+encodeURIComponent(chunk.map(p=>p.wiki).join('|'));
     const j=await (await fetch(url)).json();
     const map={}; chunk.forEach(p=>map[p.wiki]=p.id);
     const alias=t=>{ for(const n of (j.query.normalized||[])) if(n.to===t) t=n.from; return t; };
@@ -517,7 +518,7 @@ async function enrichFromWikipedia(){
   /* Bildnachweise (Urheber + Lizenz) von Wikimedia Commons holen – Pflicht laut Lizenz */
   const files=[...new Set(Object.values(out).map(o=>o.file).filter(Boolean))];
   const strip=h=>{ const d=document.createElement('div'); d.innerHTML=h||''; return (d.textContent||'').replace(/\s+/g,' ').trim(); };
-  const credits={};
+  const credits={}; let creditsOk=true;
   for(let i=0;i<files.length;i+=45){
     const chunk=files.slice(i,i+45);
     const url='https://de.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata|url&iiextmetadatafilter=Artist|LicenseShortName|LicenseUrl&titles='+encodeURIComponent(chunk.map(f=>'Datei:'+f).join('|'));
@@ -529,10 +530,11 @@ async function enrichFromWikipedia(){
         const orig=(norm[pg.title]||pg.title).replace(/^(Datei|File):/,'');
         credits[orig.replace(/ /g,'_')]={ artist: strip(md.Artist&&md.Artist.value).slice(0,120)||'unbekannt', license: (md.LicenseShortName&&md.LicenseShortName.value)||'', url: ii.descriptionurl||'' };
       }
-    }catch(e){}
+    }catch(e){ creditsOk=false; }
   }
   for(const o of Object.values(out)){ if(o.file) o.credit=credits[o.file.replace(/ /g,'_')]||null; if(o.img&&!o.credit) o.img=null; }   // ohne Nachweis kein Bild
-  applyWiki(out); store.set('wiki2_'+CITY.id,{t:Date.now(), d:out});
+  applyWiki(out,city);
+  store.set('wiki3_'+city.id,{t: creditsOk? Date.now() : Date.now()-13*864e5, d:out});   // ohne Bildnachweise nur einen Tag merken
 }
 let wikiReady = Promise.resolve();
 
@@ -693,6 +695,8 @@ function doubledMeters(legs){
 async function routeScenic(origin,targets,mode,slackMin,exclude){
   let specs=chooseVias(origin,targets,mode,slackMin,exclude);
   let res=await routeSpecs(origin,specs,mode);
+  // Zu viele Zwischenpunkte oder Dienst zickt: einmal ohne Umwege versuchen, bevor es nur Luftlinie gibt
+  if(!res.ok && !res.offline && specs.some(sp=>sp.vias.length)){ specs=specs.map(sp=>({...sp,vias:[]})); res=await routeSpecs(origin,specs,mode); }
   for(let round=0; round<3 && res.ok; round++){
     const dbl=doubledMeters(res.legs); let changed=false;
     specs=specs.map((sp,i)=>{ if(!(sp.vias.length && dbl[i]>40)) return sp; changed=true;
@@ -746,7 +750,7 @@ function chooseVias(origin,targets,mode,slackMin,exclude=new Set()){
 async function routeSpecs(origin,specs,mode){
   const points=[origin]; specs.forEach(sp=>{ sp.vias.forEach(v=>points.push(v.ll)); points.push(sp.target.ll); });
   try{ return {legs:mergeLegs(await fetchRoute(points,mode),specs), ok:true}; }
-  catch(e){ return {legs:mergeLegs(rawStraight(points),specs), ok:false}; }
+  catch(e){ return {legs:mergeLegs(rawStraight(points),specs), ok:false, offline: e&&(e.name==='AbortError'||e instanceof TypeError)}; }
 }
 
 /* =====================================================================
@@ -770,8 +774,16 @@ const Speech = {
   /* iOS erlaubt Ton nur nach einer Berührung. Die erste echte Wiedergabe passiert immer in einem Tipp
      (Tour starten, Anhören, Stimme testen) – danach ist das Audio-Element freigeschaltet. */
   unlock(){
-    if(this._unlocked||!this.ok) return; this._unlocked=true;
-    try{ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); }catch(e){}
+    if(this._unlocked) return; this._unlocked=true;
+    if(this.ok) try{ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); }catch(e){}
+    /* Auch das Audio-Element im Tipp einmal (stumm) starten – sonst lehnt iOS später die KI-Audios ab,
+       wenn die erste Ansage zufällig von der Gerätestimme kam. */
+    if(!this.playing) try{
+      const n=800, b=new ArrayBuffer(44+n*2), v=new DataView(b), w=(o,t)=>[...t].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+      w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVEfmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+      v.setUint32(24,8000,true); v.setUint32(28,16000,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
+      this.el.src=URL.createObjectURL(new Blob([b],{type:'audio/wav'})); const pr=this.el.play(); if(pr) pr.catch(()=>{});
+    }catch(e){}
   },
   loadManifest(cityId){
     this.manifest=null; showVoiceStatus();
@@ -809,7 +821,7 @@ const Speech = {
     this.tag=it.tag;
     if(it.src){
       this.el.src=it.src; this.el.playbackRate=state.settings.rate||1;
-      const pr=this.el.play(); if(pr) pr.catch(()=>{ if(this.playing===it){ it.src=null; this._device(it); } });
+      const pr=this.el.play(); if(pr) pr.catch(e=>{ if(this.playing===it && !this.paused && e && e.name!=='AbortError'){ it.src=null; this._device(it); } });
     } else this._device(it);
     updatePlayBtn();
   },
@@ -826,7 +838,7 @@ const Speech = {
   stop(silent){
     this.queue=[]; const it=this.playing; this.playing=null; this.tag=null; this.paused=false;
     try{ this.el.pause(); }catch(e){}
-    if(this.ok) speechSynthesis.cancel();
+    if(this.ok){ try{ speechSynthesis.resume(); }catch(e){} speechSynthesis.cancel(); }   // Safari bleibt sonst nach Pause stumm
     if(!silent) updatePlayBtn();
   }
 };
@@ -845,6 +857,7 @@ function showVoiceStatus(){
    ===================================================================== */
 const INIT_CITY=CITIES.find(c=>c.id===state.settings.cityId)||CITIES[0];
 let map=null, mapReadyResolve; const mapReady=new Promise(r=>mapReadyResolve=r);
+setTimeout(()=>mapReadyResolve(),10000);   // Kartenstil lädt nicht (offline)? Standort & Stadterkennung trotzdem starten
 const markers={stops:[],wayside:[],start:null,me:null};
 try{
   map=new maplibregl.Map({container:'map', style:'https://tiles.openfreemap.org/styles/liberty',
@@ -873,8 +886,8 @@ function drawWaysideMarkers(){
   markers.wayside.forEach(m=>m&&m.remove()); markers.wayside=[];
   for(const w of CITY.wayside){ markers.wayside.push(addMarker(el('mk-small'),w.ll,()=>openStory(w,{mode:'wayside'}))); }
 }
-function setStart(ll){
-  state.pickLL=ll; state.start=ll;
+function setStart(ll,picked=false){
+  if(picked) state.pickLL=ll; state.start=ll;
   if(markers.start) markers.start.remove();
   markers.start=addMarker(el('mk-start'),ll);
 }
@@ -993,7 +1006,7 @@ function bindSeg(id,key,onChange){
 }
 function initPlanUI(){
   bindSeg('#segStart','startKind',v=>{ $('#startHint').hidden=v!=='pick'; const st=CITY.starts.find(x=>x.id===v);
-    if(st){ setStart(st.ll); map&&map.flyTo({center:[st.ll[1],st.ll[0]],zoom:14.6}); } if(v==='me') locateOnce(true); });
+    if(st){ setStart(st.ll); map&&map.flyTo({center:[st.ll[1],st.ll[0]],zoom:14.6}); } if(v==='me') locateOnce(true); if(v==='pick'&&state.pickLL) setStart(state.pickLL,true); });
   let taps=[]; $('#planTitle').addEventListener('click',()=>{ const now=Date.now(); taps=[...taps.filter(t=>now-t<3000),now];
     if(taps.length>=7){ taps=[]; state.dev=!state.dev; store.set('dev',state.dev); applyDev(); notice(state.dev?'Entwicklermodus an: Stadtauswahl, Simulation und Routing-Server findest du unten unter „Entwickler“.':'Entwicklermodus aus.'); } });
   bindSeg('#segMode','mode');
@@ -1020,19 +1033,24 @@ function cityAt(ll){ let best=null; for(const c of CITIES){ const d=dist(ll,c.ce
 function loadCityData(entry){
   const D=globalThis.CITY_DATA||{}; if(D[entry.id]) return Promise.resolve(D[entry.id]);
   return new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src=entry.file;
-    sc.onload=()=>res(globalThis.CITY_DATA[entry.id]); sc.onerror=()=>rej(new Error('Stadt konnte nicht geladen werden')); document.head.appendChild(sc); });
+    sc.onload=()=>{ const d=(globalThis.CITY_DATA||{})[entry.id]; d? res(d) : rej(new Error('Stadtdatei unvollständig')); }; sc.onerror=()=>rej(new Error('Stadt konnte nicht geladen werden')); document.head.appendChild(sc); });
 }
 /* Laufende Tour ohne Abschlussbildschirm abbrechen (z. B. beim Stadtwechsel im Entwicklermodus) */
 function abortTour(){
   stopTracking(); Speech.stop();
-  state.nav=null; state.storyCtx=null;
+  state.nav=null; state.storyCtx=null; state.arrival=null;
   $('#banner').hidden=true; $('#toast').hidden=true; $('#rerouteBtn').hidden=true; $('#simBar').hidden=true; $('#endConfirm').hidden=true;
   state.storyMin=false; $('#story').hidden=true; updatePlayer();
 }
-async function selectCity(id){
-  const entry=cityEntry(id)||CITIES[0];
-  let data; try{ data=await loadCityData(entry); }catch(e){ notice('Die Stadt konnte nicht geladen werden. Bitte Internetverbindung prüfen.'); return; }
+let citySeq=0;
+/* auto:true = automatische Erkennung; bricht nie eine laufende Tour ab. Gibt true zurück, wenn gewechselt wurde. */
+async function selectCity(id,{auto=false}={}){
+  const entry=cityEntry(id)||CITIES[0], my=++citySeq;
+  let data; try{ data=await loadCityData(entry); }catch(e){ if(my===citySeq) notice('Die Stadt konnte nicht geladen werden. Bitte Internetverbindung prüfen.'); return false; }
+  if(my!==citySeq) return false;                       // inzwischen wurde eine andere Stadt gewählt
+  if(auto && (state.nav||!$('#viewPreview').hidden)) return false;
   if(state.nav||state.sim) abortTour();
+  else { state.storyCtx=null; state.storyMin=false; $('#story').hidden=true; updatePlayer(); }
   CITY=normalizeCity(data);
   const s=state.settings;
   s.themesByCity=s.themesByCity||{};
@@ -1047,10 +1065,11 @@ async function selectCity(id){
   showView('viewPlan');
   renderCityUI();
   Speech.loadManifest(entry.id);
-  wikiReady=Promise.race([ enrichFromWikipedia().catch(()=>{}), new Promise(r=>setTimeout(r,3500)) ]);
+  wikiReady=Promise.race([ enrichFromWikipedia(CITY).catch(()=>{}), new Promise(r=>setTimeout(r,3500)) ]);
   wikiReady.then(()=>{ if(CITY.id===entry.id) drawWaysideMarkers(); });
   const st=CITY.starts.find(x=>x.id===s.startKind)||CITY.starts[0]; setStart(st.ll);
   map&&map.jumpTo({center:[CITY.center[1],CITY.center[0]],zoom:14.4});
+  return true;
 }
 function renderCityUI(){
   $('#cityName').textContent=CITY.name; $('#cityTagline').textContent=CITY.tagline||'';
@@ -1110,7 +1129,7 @@ async function locateOnce(asStart){
       if(asStart) setStart(CITY.starts[0].ll);
       return null;
     }
-    if(here.id!==CITY.id && !state.nav){ await selectCity(here.id); notice(`Willkommen in ${here.name}!`); }
+    if(here.id!==CITY.id && !state.nav){ if(await selectCity(here.id,{auto:true})) notice(`Willkommen in ${here.name}!`); }
     if(asStart) setStart(ll);
     map&&map.flyTo({center:[ll[1],ll[0]],zoom:15.5});
     return ll;
@@ -1125,10 +1144,11 @@ async function doPlan(){
   const s=state.settings;
   if(!s.themes.length){ notice('Wähle mindestens ein Thema aus.'); return; }
   const btn=$('#planBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Tour wird geplant …';
+  const city=CITY, stale=()=>CITY!==city||!!state.nav;
   try{
     if(s.startKind==='pick' && !state.pickLL){ notice('Tippe zuerst auf die Karte, um den Startpunkt zu setzen.'); return; }
     if(!state.start) setStart(CITY.starts[0].ll);
-    await wikiReady;
+    await wikiReady; if(stale()) return;
     const start=state.start, SCENIC=0.85;   // 15 % der Zeit bleiben für Umwege durch Parks, Gassen und an Sehenswertem vorbei
     let seq=planTour({start,mode:s.mode,minutes:s.minutes*SCENIC,themes:s.themes,loop:s.loop});
     if(!seq.length) seq=planTour({start,mode:s.mode,minutes:s.minutes,themes:s.themes,loop:s.loop});
@@ -1138,10 +1158,10 @@ async function doPlan(){
       const targets=seq.map(st=>({name:st.name,ll:st.ll,stop:st}));
       if(s.loop) targets.push({name:'Zurück zum Start',ll:start,home:true});
       const slack=s.minutes-tourTime(seq,start,s.mode,s.loop);
-      res=await routeScenic(start,targets,s.mode,slack);
+      res=await routeScenic(start,targets,s.mode,slack); if(stale()) return;
       const meters=res.legs.reduce((a,l)=>a+l.distance,0);
       total=travelMin(res.legs,s.mode)+seq.reduce((a,st)=>a+dwellOf(st,s.mode),0);
-      if(total<=s.minutes*1.1 || seq.length<=1 || tries>=4) break;
+      if(total<=s.minutes*1.1 || seq.length<=1 || tries>=4 || !res.ok) break;
       const worst=seq.reduce((w,st)=>scoreOf(st,s.themes)<scoreOf(w,s.themes)?st:w,seq[0]);
       seq=seq.filter(st=>st!==worst); tries++;
     }
@@ -1164,7 +1184,7 @@ function renderPreview(total){
     : `Davon ca. ${fmtDist(pm)} durch Fußgängerzonen. Dort musst du absteigen und schieben, die Route ist gelb markiert und die Zeit ist mit Gehtempo eingerechnet.`;
   const ol=$('#pvList'); ol.innerHTML='';
   state.tour.forEach((st,i)=>{ const li=document.createElement('li');
-    li.innerHTML=`<span class="num">${i+1}</span><span class="t"><b>${esc(st.name)}${st.mustsee?' <i class="hl">Must-See</i>':''}</b><span>${esc(st.teaser)}</span></span><span class="m">${dwellOf(st,s.mode)} min</span>`;
+    li.innerHTML=`<span class="num">${i+1}</span><span class="t"><b>${esc(st.name)}${st.mustsee?' <i class="hl">Must-See</i>':''}</b><span>${esc(st.teaser||'')}</span></span><span class="m">${dwellOf(st,s.mode)} min</span>`;
     li.onclick=()=>openStory(st,{mode:'preview'}); ol.appendChild(li); });
   positionLocate();
 }
@@ -1196,9 +1216,14 @@ function arrowSVG(st){
 }
 
 async function startTour(simulate){
+  if(state.nav||!state.legs) return;
   const s=state.settings; follow=true;
   $('#simBar').hidden=!simulate;
-  state.nav={legIdx:0, stepIdx:0, visited:[], told:new Set(), zones:new Set(), announced:new Set(), pushTold:new Set(), off:0, t0:Date.now(), walked:0, last:null};
+  const nav=state.nav={legIdx:0, stepIdx:0, visited:[], told:new Set(), zones:new Set(), announced:new Set(), pushTold:new Set(), off:0, t0:Date.now(), walked:0, last:null, routeGen:0};
+  state.arrival=null; $('#rerouteBtn').hidden=true;
+  // Was direkt am Startpunkt liegt, wird nicht als Wegesrand-Geschichte in die Begrüßung hinein erzählt
+  const st0=state.legs[0].pts[0]||state.start;
+  for(const w of [...CITY.wayside,...CITY.stops]) if(dist(w.ll,st0)<45) nav.told.add(w.id);
   showView('viewNav'); $('#banner').hidden=false; $('#endConfirm').hidden=true;
   drawRoute(); drawStopMarkers(); updateAudioBtn();
   requestWake();
@@ -1219,7 +1244,7 @@ async function startTour(simulate){
       BG.addWatcher({ backgroundTitle:'Stadtführung läuft', backgroundMessage:'Deine Tour geht weiter.', requestPermissions:true, stale:false, distanceFilter:3 },
         (loc,err)=>{ if(err){ if(err.code==='NOT_AUTHORIZED') notice('Bitte erlaube den Standortzugriff in den iPhone-Einstellungen.',6000); return; }
           if(!state.sim) onPosition([loc.latitude,loc.longitude],loc.accuracy); })
-        .then(id=>{ state.bgWatcher=id; });
+        .then(id=>{ if(state.nav===nav) state.bgWatcher=id; else BG.removeWatcher({id}); });
       updateNavUI(); return;
     }
     $('#navHint').textContent='Lass den Bildschirm an. Als Web-App kann der Standort sonst nicht verfolgt werden.';
@@ -1235,7 +1260,7 @@ function onPosition(ll,acc){
   const nav=state.nav; if(!nav) return;
   if(nav.last) nav.walked+=Math.min(dist(nav.last,ll),200); nav.last=ll;
   setMe(ll);
-  if(state.storyCtx&&state.storyCtx.mode==='arrival') return;
+  if(state.arrival) return;                       // an der Station: erst weiter, wenn man „Weiter“ tippt
   const leg=state.legs[nav.legIdx]; if(!leg) return;
   if(map&&follow){ if(state.sim) map.jumpTo({center:[ll[1],ll[0]]}); else map.easeTo({center:[ll[1],ll[0]],duration:600}); }
   // Manöver abhaken
@@ -1278,7 +1303,8 @@ let toastTimer;
 function tellWayside(title,text,eyebrow,key,ref){
   $('#toastEyebrow').textContent=eyebrow; $('#toastTitle').textContent=title; $('#toastTitle').hidden=!title; $('#toastText').textContent=text; $('#toast').hidden=false;
   clearTimeout(toastTimer);
-  const hide=()=>{ toastTimer=setTimeout(()=>$('#toast').hidden=true,5000); };
+  const hide=()=>{ clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('#toast').hidden=true,5000); };
+  toastTimer=setTimeout(()=>$('#toast').hidden=true,90000);    // falls die Ansage abgebrochen wird
   const storyPlaying=Speech.busy() && Speech.tag && Speech.tag.startsWith('story');
   if(state.settings.audio && !storyPlaying){ Speech.say(text,{key,tag:'way',interrupt:false,onend:hide,title:title||eyebrow,ref}); } else toastTimer=setTimeout(()=>$('#toast').hidden=true,20000);
 }
@@ -1322,7 +1348,7 @@ function updateNavUI(ll){
 function arrive(){
   const nav=state.nav, leg=state.legs[nav.legIdx];
   if(leg.target.home){ finishTour(); return; }
-  const st=leg.target.stop;
+  const st=leg.target.stop; state.arrival=st;
   if(!nav.visited.includes(st.id)) nav.visited.push(st.id);
   nav.told.add(st.id);
   $('#toast').hidden=true; $('#rerouteBtn').hidden=true;
@@ -1332,9 +1358,10 @@ function arrive(){
   if(state.settings.autoplay) Speech.say(PHRASES.story(st),{key:'story:'+st.id,tag:'story:'+st.id,title:st.name,ref:st});
 }
 function advance(){
-  const nav=state.nav;
-  nav.legIdx++; nav.stepIdx=0; nav.off=0;
-  if(state.sim) state.sim.dist=0;
+  const nav=state.nav; if(!nav) return;
+  nav.legIdx++; nav.stepIdx=0; nav.off=0; nav.routeGen=(nav.routeGen||0)+1;   // laufende Neuberechnung verwerfen
+  $('#rerouteBtn').hidden=true;
+  if(state.sim){ state.sim.dist=0; state.sim.teleported=false; }
   if(nav.legIdx>=state.legs.length){ finishTour(); return; }
   const leg=state.legs[nav.legIdx];
   drawRoute(); drawStopMarkers(); updateNavUI();
@@ -1343,21 +1370,28 @@ function advance(){
 }
 async function reroute(){
   const nav=state.nav; if(!nav||!state.pos) return;
+  const idx=nav.legIdx, gen=nav.routeGen=(nav.routeGen||0)+1;
   const btn=$('#rerouteBtn'); btn.disabled=true; btn.textContent='Berechne neu …';
-  const targets=state.legs.slice(nav.legIdx).map(l=>l.target);
-  const res=await routeScenic(state.pos,targets,state.settings.mode,8,nav.told);
-  state.legs.splice(nav.legIdx,state.legs.length-nav.legIdx,...res.legs);
-  nav.stepIdx=0; nav.off=0; if(state.sim){ state.sim.dist=0; state.sim.teleported=false; }
-  btn.hidden=true; btn.disabled=false; btn.textContent='Du bist von der Route abgekommen · Neu berechnen';
-  if(!res.ok) notice('Routing gerade nicht erreichbar. Ich zeige dir die Luftlinie.');
-  drawRoute(); updateNavUI();
+  try{
+    const targets=state.legs.slice(idx).map(l=>l.target);
+    const res=await routeScenic(state.pos,targets,state.settings.mode,8,nav.told);
+    // Inzwischen angekommen, weitergeschaltet, neu berechnet oder Tour beendet? Dann ist das Ergebnis veraltet.
+    if(state.nav!==nav || nav.legIdx!==idx || nav.routeGen!==gen) return;
+    state.legs.splice(idx,state.legs.length-idx,...res.legs);
+    nav.stepIdx=0; nav.off=0; if(state.sim){ state.sim.dist=0; state.sim.teleported=false; }
+    for(const set of [nav.announced,nav.pushTold]) for(const k of [...set]) if(k.startsWith(idx+'-')) set.delete(k);
+    btn.hidden=true;
+    if(!res.ok) notice('Routing gerade nicht erreichbar. Ich zeige dir die Luftlinie.');
+    drawRoute(); updateNavUI();
+  } finally { btn.disabled=false; btn.textContent='Du bist von der Route abgekommen · Neu berechnen'; }
 }
 function finishTour(){
   const nav=state.nav; if(!nav) return;
   stopTracking();
   const mins=(Date.now()-nav.t0)/60000;
   $('#doneStats').innerHTML=`<div class="stat"><b>${nav.visited.length}</b><span>Stationen</span></div><div class="stat"><b>${fmtDist(nav.walked)}</b><span>Unterwegs</span></div><div class="stat"><b>${fmtMin(Math.max(1,mins))}</b><span>Zeit</span></div>`;
-  $('#banner').hidden=true; $('#toast').hidden=true;
+  $('#banner').hidden=true; $('#toast').hidden=true; $('#rerouteBtn').hidden=true; $('#simBar').hidden=true;
+  state.arrival=null; state.storyCtx=null; state.storyMin=false; $('#story').hidden=true;
   $('#doneTitle').textContent=`${(CITY.dialect&&CITY.dialect.hello)||'Danke'}, bis zum nächsten Mal!`;
   showView('viewDone');
   Speech.say(PHRASES.end(CITY),{key:'end',tag:'end',title:'Tour beendet'});
@@ -1370,7 +1404,11 @@ function stopTracking(){
   if(state.wake){ state.wake.release().catch(()=>{}); state.wake=null; }
 }
 async function requestWake(){
-  try{ if('wakeLock' in navigator) state.wake=await navigator.wakeLock.request('screen'); }catch(e){}
+  try{ if(!('wakeLock' in navigator)) return;
+    const w=await navigator.wakeLock.request('screen');
+    if(!state.nav){ w.release().catch(()=>{}); return; }
+    state.wake=w; w.addEventListener('release',()=>{ if(state.wake===w) state.wake=null; });   // beim Ausblenden gibt der Browser ihn frei
+  }catch(e){}
 }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&state.nav&&!state.wake) requestWake(); });
 
@@ -1378,7 +1416,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 function simTick(){
   const sim=state.sim, nav=state.nav; if(!sim||!nav) return;
   const now=performance.now(), dt=(now-sim.last)/1000; sim.last=now;
-  if(state.storyCtx&&state.storyCtx.mode==='arrival') return;
+  if(state.arrival) return;
   if(Speech.busy() && Speech.tag && (Speech.tag.startsWith('story')||Speech.tag==='intro')) return;
   const leg=state.legs[nav.legIdx]; if(!leg) return;
   if(sim.paused||sim.teleported) return;
@@ -1393,6 +1431,7 @@ function simTick(){
    Geschichten-Ansicht
    ===================================================================== */
 function openStory(s,{mode}){
+  clearTimeout(minTimer);
   state.storyCtx={s,mode};
   const img=$('#storyImg'); if(s.img){ img.src=s.img; img.alt=s.name; img.hidden=false; const c=s.credit||{}; $('#storyCap').innerHTML=`Foto: ${esc(c.artist||'unbekannt')}${c.license?' · '+esc(c.license):''}${c.url?` · <a href="${esc(c.url)}" target="_blank" rel="noopener">Quelle</a>`:''} (Wikimedia Commons)`; $('#storyCap').hidden=false; } else { img.hidden=true; $('#storyCap').hidden=true; }
   const labels=(s.themes||[]).map(t=>(CITY.themes.find(x=>x.id===t)||{}).label).filter(Boolean);
@@ -1415,26 +1454,36 @@ function openStory(s,{mode}){
   const el=$('#story'); el.style.transform=''; el.hidden=false; el.scrollTop=0;
   updatePlayBtn();
 }
+/* Station abgeschlossen: weiter zum nächsten Ziel */
+function continueFromArrival(){
+  state.arrival=null; state.storyCtx=null; state.storyMin=false; $('#story').hidden=true;
+  Speech.stop(); advance(); updatePlayer();
+}
+/* Wurde während einer Ankunft eine andere Geschichte geöffnet, kehrt die eingeklappte Ankunft zurück */
+function backToArrival(){ if(state.arrival&&state.nav){ state.storyCtx={s:state.arrival,mode:'arrival'}; state.storyMin=true; return true; } return false; }
 function closeStory(){
-  const ctx=state.storyCtx; state.storyCtx=null; state.storyMin=false; $('#story').hidden=true;
-  if(ctx&&ctx.mode==='arrival'){ Speech.stop(); advance(); }
-  updatePlayer();
+  const ctx=state.storyCtx;
+  if(ctx&&ctx.mode==='arrival'){ continueFromArrival(); return; }
+  state.storyCtx=null; state.storyMin=false; $('#story').hidden=true;
+  backToArrival(); updatePlayer();
 }
 /* Nach unten wischen: Geschichte einklappen, Audio läuft weiter, Karte ist sichtbar */
+let minTimer;
 function minimizeStory(){
   const ctx=state.storyCtx, el=$('#story');
   el.style.transform='translateY(100%)';
-  setTimeout(()=>{ el.hidden=true; el.style.transform=''; updatePlayer(); },280);
-  if(ctx&&ctx.mode==='arrival') state.storyMin=true; else state.storyCtx=null;
+  clearTimeout(minTimer); minTimer=setTimeout(()=>{ el.hidden=true; el.style.transform=''; updatePlayer(); },280);
+  if(ctx&&ctx.mode==='arrival') state.storyMin=true; else { state.storyCtx=null; backToArrival(); }
   updatePlayer();
 }
 function restoreStory(){
+  clearTimeout(minTimer);
   if(state.storyMin&&state.storyCtx){ state.storyMin=false; const el=$('#story'); el.style.transform=''; el.hidden=false; updatePlayer(); return; }
-  const it=Speech.playing; if(it&&it.ref) openStory(it.ref,{mode:it.ref.story?'preview':'wayside'});
+  const it=Speech.playing; if(it&&it.ref) openStory(it.ref,{mode:it.ref.story&&it.tag!=='way'?'preview':'wayside'});
 }
 function updatePlayBtn(){
   const ctx=state.storyCtx;
-  if(ctx){ const playing=Speech.tag==='story:'+ctx.s.id && Speech.busy();
+  if(ctx){ const playing=!!Speech.playing && Speech.playing.ref===ctx.s;
     $('#storyPlay').textContent=playing&&!Speech.paused? '❚❚ Pause' : (playing? '▶ Weiter' : '▶ Anhören'); }
   updatePlayer();
 }
@@ -1458,12 +1507,12 @@ function updatePlayer(){
 }
 $('#playerPause').onclick=()=>{
   const it=Speech.playing;
-  if(!it){ const ctx=state.storyCtx; if(ctx){ Speech.say(PHRASES.story(ctx.s),{key:'story:'+ctx.s.id,tag:'story:'+ctx.s.id,title:ctx.s.name,ref:ctx.s}); } return; }
+  if(!it){ const ctx=state.storyCtx; if(ctx){ if(!state.settings.audio){ state.settings.audio=true; saveSettings(); updateAudioBtn(); } Speech.unlock(); Speech.say(PHRASES.story(ctx.s),{key:'story:'+ctx.s.id,tag:'story:'+ctx.s.id,title:ctx.s.name,ref:ctx.s}); } return; }
   Speech.paused? Speech.resume() : Speech.pause();
 };
 $('#playerSpeed').onclick=()=>{ const i=RATES.indexOf(+state.settings.rate); Speech.setRate(RATES[(i+1)%RATES.length]); };
 $('#playerSkip').onclick=()=>{
-  if(state.storyCtx&&state.storyCtx.mode==='arrival'){ closeStory(); return; }
+  if(state.storyMin&&state.arrival){ continueFromArrival(); return; }
   Speech.skip();
 };
 $('#storyMinBtn').onclick=minimizeStory;
@@ -1489,7 +1538,7 @@ $('#storyMinBtn').onclick=minimizeStory;
 })();
 $('#storyPlay').onclick=()=>{
   const ctx=state.storyCtx; if(!ctx) return;
-  if(Speech.tag==='story:'+ctx.s.id && Speech.busy()){ Speech.paused? Speech.resume() : Speech.pause(); updatePlayBtn(); return; }
+  if(Speech.playing && Speech.playing.ref===ctx.s){ Speech.paused? Speech.resume() : Speech.pause(); updatePlayBtn(); return; }
   if(!state.settings.audio){ state.settings.audio=true; saveSettings(); updateAudioBtn(); }
   Speech.unlock();
   if(ctx.s.story) Speech.say(PHRASES.story(ctx.s),{key:'story:'+ctx.s.id,tag:'story:'+ctx.s.id,title:ctx.s.name,ref:ctx.s});
@@ -1503,8 +1552,11 @@ $('#storyClose').onclick=closeStory;
    ===================================================================== */
 function updateAudioBtn(){ $('#audioBtn').setAttribute('aria-pressed',String(!!state.settings.audio)); }
 $('#audioBtn').onclick=()=>{ state.settings.audio=!state.settings.audio; saveSettings(); if(!state.settings.audio) Speech.stop(); updateAudioBtn(); };
-$('#infoBtn').onclick=()=>{ const l=state.legs[state.nav.legIdx]; if(l&&l.target.stop) openStory(l.target.stop,{mode:'preview'}); };
-$('#skipBtn').onclick=async()=>{ if(!state.nav) return; Speech.stop(); advance(); if(state.nav && state.pos) await reroute(); };
+$('#infoBtn').onclick=()=>{ if(!state.nav) return; const l=state.legs[state.nav.legIdx]; if(l&&l.target.stop) openStory(l.target.stop,{mode:'preview'}); };
+$('#skipBtn').onclick=async()=>{ if(!state.nav) return;
+  if(state.arrival){ continueFromArrival(); return; }                 // schon am Stopp: einfach weiter
+  const t=state.legs[state.nav.legIdx].target; if(t.stop) state.nav.told.add(t.stop.id);   // nicht als Umweg wieder einbauen
+  Speech.stop(); advance(); if(state.nav && state.pos) await reroute(); };
 $('#endBtn').onclick=()=>{ $('#endConfirm').hidden=false; positionLocate(); };
 $('#endNo').onclick=()=>{ $('#endConfirm').hidden=true; positionLocate(); };
 $('#endYes').onclick=()=>finishTour();
@@ -1537,13 +1589,13 @@ async function onMapTap(ll){
     if(!state.sim) return;
     state.sim.teleported=true; follow=true;
     onPosition(ll);
-    if(!state.nav||(state.storyCtx&&state.storyCtx.mode==='arrival')) return;
+    if(!state.nav||state.arrival) return;
     notice('Position versetzt. Route wird neu berechnet …',2500);
     await reroute();
     return;
   }
   if($('#viewPlan').hidden) return;
-  if(state.settings.startKind==='pick'){ setStart(ll); return; }
+  if(state.settings.startKind==='pick'){ setStart(ll,true); return; }
   if(state.settings.sim){ state.simPos=ll; setMe(ll); if(state.settings.startKind==='me') setStart(ll); else notice('Simulierte Position gesetzt. Wähle „Mein Standort“, um hier zu starten.'); }
 }
 
@@ -1564,7 +1616,7 @@ async function detectCity(){
   try{
     const ll=await getPosition(8000); setMe(ll);
     const here=cityAt(ll);
-    if(here && here.id!==CITY.id && !state.nav){ await selectCity(here.id); }
+    if(here && here.id!==CITY.id && !state.nav){ await selectCity(here.id,{auto:true}); }
     if(!here && !state.dev && state.settings.startKind!=='me') notice(`Du bist gerade in keiner Stadt, für die es schon Touren gibt. Die Tour durch ${CITY.name} kannst du dir trotzdem ansehen.`,7000);
   }catch(e){ /* kein Standort: zuletzt genutzte Stadt bleibt */ }
 }

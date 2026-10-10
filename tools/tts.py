@@ -50,8 +50,10 @@ def gemini_request(model, prompt):
     return base64.b64decode(part["data"]), rate
 
 def pcm_to_mp3(pcm, rate, path):
+    # erst in eine Temp-Datei, damit ein Abbruch keine halbe Datei als „fertig“ im Cache hinterlässt
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "s16le", "-ar", str(rate), "-ac", "1", "-i", "pipe:0",
-                    "-codec:a", "libmp3lame", "-b:a", "64k", path], input=pcm, check=True)
+                    "-codec:a", "libmp3lame", "-b:a", "64k", "-f", "mp3", path + ".tmp"], input=pcm, check=True)
+    os.replace(path + ".tmp", path)
 
 def note(state, msg):
     print(msg, flush=True); state["log"] = (state.get("log", []) + [msg])[-12:]
@@ -69,6 +71,7 @@ def run_gemini(TEXTS, manifest, city_name, state, city):
         else: todo.append((key, text, fname, path))
     print(f"gemini: {len(todo)} offen, {len(m)} aus Cache", flush=True)
     models, done = state["models"], 0
+    state.setdefault("t0", time.time())   # Zeitbudget zählt erst ab der ersten Gemini-Anfrage
     for key, text, fname, path in todo:
         if time.time() - state["t0"] > GEMINI_BUDGET_S: note(state, "Zeitbudget erreicht, Rest beim nächsten Lauf"); break
         if state.get("requests", 0) >= GEMINI_MAX_REQUESTS: note(state, f"Kostenbremse: {GEMINI_MAX_REQUESTS} Anfragen in diesem Lauf erreicht"); break
@@ -118,7 +121,7 @@ def phonetic(text):
 async def run_edge(TEXTS, manifest):
     import edge_tts
     sem = asyncio.Semaphore(4)
-    async def render(cands, text, path):
+    async def render(key, cands, text, path):
         async with sem:
             last = None
             for v in cands:
@@ -128,20 +131,22 @@ async def run_edge(TEXTS, manifest):
                         os.replace(path + ".tmp", path); return
                     except Exception as e:
                         last = e; await asyncio.sleep(2 + attempt * 3)
-            raise RuntimeError(f"edge-tts fehlgeschlagen: {last}")
+            raise RuntimeError(f"edge-tts fehlgeschlagen bei {key}: {last}")
     for vid, cands in EDGE_VOICES.items():
-        m, jobs = {}, []
+        m, jobs, keys = {}, [], []
         for key, text in TEXTS.items():
             text = phonetic(text)
             fname = f"{vid}-" + hashlib.sha1(f"{cands[0]}|{text}".encode()).hexdigest()[:16] + ".mp3"
             m[key] = fname; path = os.path.join(OUT, fname)
-            if not os.path.exists(path) or os.path.getsize(path) < 1000: jobs.append(render(cands, text, path))
+            if not os.path.exists(path) or os.path.getsize(path) < 1000: jobs.append(render(key, cands, text, path)); keys.append(key)
         print(f"{vid}: {len(jobs)} neu, {len(m) - len(jobs)} aus Cache", flush=True)
-        await asyncio.gather(*jobs)
+        # Einzelne Fehler brechen nicht den ganzen Deploy ab: die Datei fehlt dann, die App nimmt die Gerätestimme
+        for key, r in zip(keys, await asyncio.gather(*jobs, return_exceptions=True)):
+            if isinstance(r, Exception): print(f"  ✗ {r}", flush=True); m.pop(key, None)
         manifest["voices"][vid] = m
 
 # Eine Manifest-Datei pro Stadt: audio/manifest-<stadt>.json  (die App lädt nur die der gewählten Stadt)
-keep, gstate = set(), {"models": list(GEMINI_MODELS), "t0": time.time(), "log": []}
+keep, gstate = set(), {"models": list(GEMINI_MODELS), "log": []}
 for city, TEXTS in ALL.items():
     print(f"=== {city}: {len(TEXTS)} Texte", flush=True)
     manifest = {"voices": {}}
