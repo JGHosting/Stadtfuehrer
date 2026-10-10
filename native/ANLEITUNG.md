@@ -64,7 +64,18 @@ Dann in Xcode erneut ▶. Die KI-Audios lädt die App immer aktuell von GitHub P
 - Der Simulationsmodus funktioniert auch in der App (7× auf „Deine Stadtführung“ tippen).
 
 ## Später für den App Store
-- Apple Developer Program (99 $/Jahr), endgültiger Name + Bundle-ID
-- App-Icon: `native/resources/icon.png` (1024×1024) → `npx @capacitor/assets generate --ios`
+- Apple Developer Program (99 $/Jahr). Name „Strolli“ und Bundle-ID `com.greimel.strolli` stehen fest.
+
+## App-Icon im Liquid-Glass-Stil (iOS 26)
+Echtes Liquid Glass (Lichtbrechung, Hell/Dunkel/Getönt/Klar) rendert iOS selbst aus einem Ebenen-Icon:
+1. In Xcode: Menü **Xcode → Open Developer Tool → Icon Composer**.
+2. Neues Icon anlegen und die drei Dateien aus `native/resources/icon-composer/` als Ebenen hineinziehen
+   (SVG, von unten nach oben): `layer-1-hintergrund` als Hintergrund, darüber `layer-2-weg`, oben `layer-3-ziel`.
+3. Bei den Ebenen *Liquid Glass* an lassen, nach Geschmack Glanz/Schatten anpassen und in der Vorschau
+   Hell, Dunkel und Getönt anschauen.
+4. Als `AppIcon.icon` speichern, in Xcode in den Ordner **App** ziehen und unter **General → App Icon** den Namen `AppIcon` eintragen.
+
+Für ältere iOS-Versionen und die Web-App gibt es eine fertig gerenderte Glas-Version: `native/resources/icon.png`
+(1024×1024, Quelle `icon-glass.svg`) → `npx @capacitor/assets generate --ios`.
 - Datenschutzangaben im App Store Connect („Standort: nicht mit Identität verknüpft, nicht zum Tracking“)
 - Routing auf eigenen Server umstellen (siehe `server/README.md`), Stimmen auf offizielle, bezahlte Dienste

@@ -1,6 +1,6 @@
 // Cacht die App selbst (Netz zuerst, damit Updates sofort ankommen) und bereits gehörte KI-Audios.
 // Karte, Routing und Wikipedia kommen immer live aus dem Netz.
-const CACHE = 'stadtfuehrer-v6';
+const CACHE = 'stadtfuehrer-v7';
 const AUDIO_CACHE = 'stadtfuehrer-audio-v1';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png',
   './content/config.js', './content/cities.js', './content/phrases.js', './content/augsburg.js', './content/muenchen.js',
