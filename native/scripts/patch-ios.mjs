@@ -25,4 +25,16 @@ if (!ad.includes('AVAudioSession')) {
         try? AVAudioSession.sharedInstance().setActive(true)`);
   fs.writeFileSync(adPath, ad);
 }
-console.log('iOS-Projekt angepasst (Info.plist, AppDelegate).');
+// 3) App-Icon und Startbildschirm (Strolli statt Capacitor-Platzhalter)
+const res = path.resolve(here, '..', 'resources');
+const xc = path.join(app, 'Assets.xcassets');
+const setImage = (dir, file, src, json) => {
+  if (!fs.existsSync(src)) return;
+  fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+  fs.copyFileSync(src, path.join(dir, file)); fs.writeFileSync(path.join(dir, 'Contents.json'), JSON.stringify(json, null, 2));
+};
+setImage(path.join(xc, 'AppIcon.appiconset'), 'AppIcon.png', path.join(res, 'icon.png'),
+  { images: [{ filename: 'AppIcon.png', idiom: 'universal', platform: 'ios', size: '1024x1024' }], info: { author: 'xcode', version: 1 } });
+setImage(path.join(xc, 'Splash.imageset'), 'splash.png', path.join(res, 'splash.png'),
+  { images: [{ filename: 'splash.png', idiom: 'universal' }], info: { author: 'xcode', version: 1 } });
+console.log('iOS-Projekt angepasst (Info.plist, AppDelegate, Icon, Startbildschirm).');

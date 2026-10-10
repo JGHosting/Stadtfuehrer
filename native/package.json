@@ -1,11 +1,11 @@
 {
-  "name": "stadtfuehrer-native",
+  "name": "strolli-native",
   "private": true,
-  "description": "Native iOS-Hülle (Capacitor) für die Stadtführer-Web-App",
+  "description": "Native iOS-Hülle (Capacitor) für Strolli",
   "scripts": {
     "copy-web": "node scripts/copy-web.mjs",
     "setup-ios": "npm run copy-web && npx cap add ios --packagemanager SPM && node scripts/patch-ios.mjs && npx cap sync ios",
-    "sync": "npm run copy-web && npx cap sync ios",
+    "sync": "npm run copy-web && npx cap sync ios && node scripts/patch-ios.mjs",
     "open": "npx cap open ios"
   },
   "dependencies": {
